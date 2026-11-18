@@ -31,14 +31,6 @@ def dashboard(request):
 
 
 PLACEHOLDERS = {
-    "payments": {
-        "title": "Payments",
-        "subtitle": "Receipts, allocations, credit, cheque lifecycle and statement import.",
-        "icon": "payments",
-        "empty_title": "No payments yet",
-        "description": "Record payments with an allocation preview, receipts and M-Pesa or bank statement matching in the payments phase.",
-        "phase_note": "Phase 4 adds payment allocation, receipts and statement import.",
-    },
     "maintenance": {
         "title": "Maintenance",
         "subtitle": "Requests per unit with priority, cost and expense links.",
@@ -76,7 +68,6 @@ def _make_placeholder(key):
     return view
 
 
-payments = _make_placeholder("payments")
 maintenance = _make_placeholder("maintenance")
 expenses = _make_placeholder("expenses")
 reports = _make_placeholder("reports")

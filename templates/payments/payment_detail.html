@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}{{ payment.receipt_number }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'payments' %}">&larr; Payments</a></p>
+      <h1 class="page-title">{{ payment.receipt_number }} {% include 'components/badge.html' with label=payment.get_status_display tone=payment.status|status_tone %}</h1>
+      <p class="page-subtitle">
+        <a href="{% url 'tenant_detail' payment.tenant.pk %}">{{ payment.tenant.business_name }}</a>
+        &middot; {{ payment.date_received|date:"d M Y" }} &middot; {{ payment.get_method_display }}
+      </p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'payment_pdf' payment.pk %}" target="_blank" rel="noopener">Receipt PDF</a>
+      <a class="btn" href="{% url 'payment_thermal' payment.pk %}">Thermal receipt</a>
+      <a class="btn" href="{% url 'payment_new' %}?tenant={{ payment.tenant.pk }}">Record another</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Cash received' value=payment.amount|money:app_settings.currency hint='Money received' %}
+      {% include 'components/metric_card.html' with label='Withholding' value=payment.withholding_amount|money:app_settings.currency hint='Tax withheld by tenant' %}
+      {% include 'components/metric_card.html' with label='Total settled' value=payment.settlement_amount|money:app_settings.currency hint='Cash plus withholding' %}
+      {% include 'components/metric_card.html' with label='Credit created' value=payment.credit_amount|money:app_settings.currency hint='Carried to tenant credit' %}
+    </div>
+
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Allocations</h2>
+            <p class="panel__subtitle">Invoices settled by this receipt.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Invoice</th><th>Due</th><th class="is-numeric">Allocated</th><th>Auto</th></tr></thead>
+            <tbody>
+              {% for allocation in allocations %}
+                <tr>
+                  <td><a class="table-link" href="{% url 'invoice_detail' allocation.invoice.pk %}">{{ allocation.invoice.invoice_number }}</a></td>
+                  <td class="nowrap">{{ allocation.invoice.due_date|date:"d M Y" }}</td>
+                  <td class="is-numeric">{{ allocation.amount|money:app_settings.currency }}</td>
+                  <td>{{ allocation.is_auto|yesno:"Yes,No" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td class="table-empty" colspan="4">No invoice allocations; the whole receipt is credit.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if credit_entries %}
+          <div class="form-section">
+            <h3 class="form-section__title">Credit entries</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Date</th><th>Source</th><th>Invoice</th><th class="is-numeric">Amount</th></tr></thead>
+                <tbody>
+                  {% for entry in credit_entries %}
+                    <tr>
+                      <td>{{ entry.entry_date|date:"d M Y" }}</td>
+                      <td>{{ entry.get_source_display }}</td>
+                      <td>{% if entry.invoice %}<a class="table-link" href="{% url 'invoice_detail' entry.invoice.pk %}">{{ entry.invoice.invoice_number }}</a>{% else %}-{% endif %}</td>
+                      <td class="is-numeric">{{ entry.amount|money:app_settings.currency }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endif %}
+      </section>
+
+      <div class="stack">
+        <section class="panel">
+          <div class="panel__header">
+            <div><h2 class="panel__title">Receipt details</h2></div>
+          </div>
+          <dl class="definition-list">
+            <dt>Receipt</dt><dd>{{ payment.receipt_number }}</dd>
+            <dt>Tenant</dt><dd>{{ payment.tenant.business_name }}</dd>
+            <dt>Date received</dt><dd>{{ payment.date_received|date:"d M Y" }}</dd>
+            <dt>Method</dt><dd>{{ payment.get_method_display }}</dd>
+            <dt>Reference</dt><dd>{{ payment.reference|default:"-" }}</dd>
+            {% if payment.method == 'cheque' %}
+              <dt>Cheque</dt><dd>{{ payment.cheque_number|default:"-" }} &middot; {{ payment.cheque_bank|default:"-" }}</dd>
+              <dt>Cheque status</dt><dd>{% include 'components/badge.html' with label=payment.get_cheque_status_display tone=payment.cheque_status|status_tone %}</dd>
+            {% endif %}
+            {% if payment.withholding_amount %}
+              <dt>Withholding</dt><dd>{{ payment.withholding_amount|money:app_settings.currency }}{% if payment.withholding_cert_no %} &middot; Cert {{ payment.withholding_cert_no }}{% endif %}</dd>
+            {% endif %}
+            {% if payment.statement_row %}
+              <dt>Statement row</dt><dd><a href="{% url 'statement_import_detail' payment.statement_row.import_run_id %}">Import #{{ payment.statement_row.import_run_id }}</a></dd>
+            {% endif %}
+            <dt>Recorded by</dt><dd>{{ payment.recorded_by.display_name|default:"System" }}</dd>
+          </dl>
+          {% if payment.notes %}
+            <p class="text-muted mt-md">{{ payment.notes|linebreaksbr }}</p>
+          {% endif %}
+        </section>
+
+        {% if payment.method == 'cheque' and payment.status == 'posted' %}
+          <section class="panel">
+            <div class="panel__header">
+              <div><h2 class="panel__title">Cheque actions</h2></div>
+            </div>
+            <div class="row">
+              <form method="post" action="{% url 'cheque_banked' payment.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn">Mark banked</button>
+              </form>
+              <form method="post" action="{% url 'cheque_bounced' payment.pk %}" data-confirm="Bounce this cheque and reverse its allocations?">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--danger">Mark bounced</button>
+              </form>
+            </div>
+          </section>
+        {% endif %}
+
+        {% if payment.status == 'posted' %}
+          <section class="panel">
+            <div class="panel__header">
+              <div>
+                <h2 class="panel__title">Void payment</h2>
+                <p class="panel__subtitle">Voiding restores invoice balances and reverses credit. The record is kept.</p>
+              </div>
+            </div>
+            <form method="post" action="{% url 'payment_void' payment.pk %}" data-confirm="Void this payment? Invoice balances will be restored.">
+              {% csrf_token %}
+              <div class="form-field">
+                <label for="void-reason">Reason</label>
+                <input class="input" id="void-reason" type="text" name="reason" placeholder="Optional reason">
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn--danger">Void payment</button>
+              </div>
+            </form>
+          </section>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

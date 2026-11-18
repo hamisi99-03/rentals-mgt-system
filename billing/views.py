@@ -164,10 +164,24 @@ def invoice_detail(request, pk):
     )
     lines = list(invoice.lines.select_related("charge_type"))
     has_vat = any(line.vat_amount and line.vat_amount != 0 for line in lines)
+    allocations = invoice.allocations.filter(payment__status="posted").select_related(
+        "payment"
+    )
+    credit_entries = [
+        entry
+        for entry in invoice.credit_entries.filter(source="applied_to_invoice")
+        if entry.payment is None or entry.payment.status == "posted"
+    ]
     return render(
         request,
         "billing/invoice_detail.html",
-        {"invoice": invoice, "lines": lines, "has_vat": has_vat},
+        {
+            "invoice": invoice,
+            "lines": lines,
+            "has_vat": has_vat,
+            "allocations": allocations,
+            "credit_entries": credit_entries,
+        },
     )
 
 

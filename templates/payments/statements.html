@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Statement imports &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'payments' %}">&larr; Payments</a></p>
+      <h1 class="page-title">Statement imports</h1>
+      <p class="page-subtitle">Upload an M-Pesa or bank CSV, then confirm each suggested match. Nothing posts automatically.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn btn--primary" href="{% url 'payment_new' %}">Record payment</a>
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Recent imports</h2>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Source</th><th>Uploaded</th><th class="is-numeric">Rows</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for import_run in imports %}
+              <tr>
+                <td>{{ import_run.get_source_display }}</td>
+                <td class="nowrap">{{ import_run.uploaded_at|date:"d M Y, H:i" }}</td>
+                <td class="is-numeric">{{ import_run.rows.all|length }}</td>
+                <td>{% include 'components/badge.html' with label=import_run.get_status_display tone=import_run.status|status_tone %}</td>
+                <td class="is-numeric"><a class="btn btn--sm" href="{% url 'statement_import_detail' import_run.pk %}">Open</a></td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="5">No statement imports yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Upload a statement</h2>
+          <p class="panel__subtitle">CSV only. M-Pesa and common bank exports are detected from the header row.</p>
+        </div>
+      </div>
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% include 'components/form_fields.html' with form=form %}
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">Upload and match</button>
+        </div>
+      </form>
+      <p class="help-text mt-sm">Unmatched rows stay pending until you pick a tenant. Ignored rows are never posted.</p>
+    </section>
+  </div>
+{% endblock %}

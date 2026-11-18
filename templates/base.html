@@ -77,6 +77,9 @@
                    placeholder="Search tenants, units, invoices..." autocomplete="off">
           </form>
           <div class="topbar__actions">
+            <a class="btn btn--primary btn--sm" href="{% url 'payment_new' %}">
+              {% include 'components/icon.html' with name='plus' %} Record payment
+            </a>
             <details class="user-menu">
               <summary>
                 <span class="avatar">{{ user.display_name|first|upper }}</span>

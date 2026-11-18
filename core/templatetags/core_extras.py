@@ -76,6 +76,16 @@ STATUS_TONES = {
     "overdue": "bad",
     "issued": "accent",
     "void": "bad",
+    "posted": "ok",
+    "received": "warn",
+    "banked": "ok",
+    "bounced": "bad",
+    "pending": "warn",
+    "completed": "ok",
+    "suggested": "accent",
+    "confirmed": "ok",
+    "unmatched": "warn",
+    "ignored": "plain",
 }
 
 

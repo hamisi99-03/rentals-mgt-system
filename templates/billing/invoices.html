@@ -51,7 +51,7 @@
     <div class="table-wrap">
       <table class="data-table">
         <thead>
-          <tr><th>Invoice</th><th>Tenant</th><th>Unit</th><th>Period</th><th>Due</th><th class="is-numeric">Total</th><th>Status</th><th></th></tr>
+          <tr><th>Invoice</th><th>Tenant</th><th>Unit</th><th>Period</th><th>Due</th><th class="is-numeric">Total</th><th class="is-numeric">Balance</th><th>Payment</th><th>Status</th><th></th></tr>
         </thead>
         <tbody>
           {% for invoice in invoices %}
@@ -62,6 +62,8 @@
               <td>{{ invoice.period_start|date:"M Y" }}</td>
               <td class="nowrap">{{ invoice.due_date|date:"d M Y" }}</td>
               <td class="is-numeric">{{ invoice.total|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ invoice.balance|money:app_settings.currency }}</td>
+              <td>{% include 'components/badge.html' with label=invoice.payment_status|capfirst tone=invoice.payment_status|status_tone %}</td>
               <td>{% include 'components/badge.html' with label=invoice.get_status_display tone=invoice.status|status_tone %}</td>
               <td class="is-numeric">
                 <div class="table-actions">
@@ -71,7 +73,7 @@
               </td>
             </tr>
           {% empty %}
-            <tr><td class="table-empty" colspan="8">No invoices match. <a href="{% url 'billing' %}">Generate invoices</a>.</td></tr>
+            <tr><td class="table-empty" colspan="10">No invoices match. <a href="{% url 'billing' %}">Generate invoices</a>.</td></tr>
           {% endfor %}
         </tbody>
       </table>

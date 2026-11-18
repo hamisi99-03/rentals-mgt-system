@@ -141,6 +141,31 @@ class Tenant(TimeStampedModel):
             .first()
         )
 
+    @property
+    def balance_due(self):
+        from decimal import Decimal
+
+        return sum(
+            (
+                invoice.balance
+                for invoice in self.invoices.filter(status="issued")
+            ),
+            Decimal("0.00"),
+        )
+
+    @property
+    def credit_balance(self):
+        from decimal import Decimal
+
+        from django.db.models import Q, Sum
+
+        from payments.models import CreditEntry
+
+        value = self.credit_entries.filter(
+            Q(payment__isnull=True) | Q(payment__status="posted")
+        ).aggregate(total=Sum("amount"))["total"]
+        return value or Decimal("0.00")
+
 
 class TenantContact(TimeStampedModel):
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="contacts")

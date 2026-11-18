@@ -376,6 +376,42 @@ def tenant_detail(request, pk):
     contacts = tenant.contacts.all()
     documents = _documents_for(tenant)
     current_lease = tenant.current_lease
+    invoices = tenant.invoices.filter(status="issued").select_related("unit").order_by(
+        "issue_date", "id"
+    )
+    payments = tenant.payments.filter(status="posted").select_related().order_by(
+        "date_received", "id"
+    )
+
+    events = []
+    for invoice in invoices:
+        events.append(
+            {
+                "date": invoice.issue_date,
+                "order": 1,
+                "description": f"Invoice {invoice.invoice_number}",
+                "invoice": invoice,
+                "charged": invoice.total,
+                "paid": None,
+            }
+        )
+    for payment in payments:
+        events.append(
+            {
+                "date": payment.date_received,
+                "order": 2,
+                "description": f"Receipt {payment.receipt_number}",
+                "payment": payment,
+                "charged": None,
+                "paid": payment.settlement_amount,
+            }
+        )
+    events.sort(key=lambda event: (event["date"], event["order"]))
+    running = 0
+    for event in events:
+        running += event["charged"] or 0
+        running -= event["paid"] or 0
+        event["balance"] = running
 
     return render(
         request,
@@ -387,6 +423,9 @@ def tenant_detail(request, pk):
             "contacts": contacts,
             "documents": documents,
             "current_lease": current_lease,
+            "invoices": list(invoices),
+            "payments": list(payments),
+            "statement_events": events,
             "contact_form": TenantContactForm(),
             "document_form": DocumentForm(),
         },

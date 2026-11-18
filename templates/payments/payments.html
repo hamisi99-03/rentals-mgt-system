@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Payments &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Payments</h1>
+      <p class="page-subtitle">Receipts, allocations, withholding and cheque status.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'statement_imports' %}">{% include 'components/icon.html' with name='database' %} Import statement</a>
+      <a class="btn btn--primary" href="{% url 'payment_new' %}">{% include 'components/icon.html' with name='plus' %} Record payment</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Receipts' value=counts.total hint='Matching filters' %}
+      {% include 'components/metric_card.html' with label='Settled' value=counts.settled|money:app_settings.currency hint='Cash plus withholding' %}
+    </div>
+
+    <section class="panel">
+      <form method="get" class="row">
+        <div class="form-field" style="min-width:240px">
+          <label class="sr-only" for="payment-search">Search payments</label>
+          <input class="input" id="payment-search" type="search" name="q" value="{{ query }}" placeholder="Receipt, tenant or reference...">
+        </div>
+        <div class="form-field">
+          <label class="sr-only" for="payment-method">Method</label>
+          <select class="select" id="payment-method" name="method">
+            <option value="">All methods</option>
+            {% for value, label in methods %}
+              <option value="{{ value }}"{% if selected_method == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="sr-only" for="payment-status">Status</label>
+          <select class="select" id="payment-status" name="status">
+            <option value="">All statuses</option>
+            {% for value, label in statuses %}
+              <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">Filter</button>
+        {% if query or selected_method or selected_status %}<a class="btn btn--ghost" href="{% url 'payments' %}">Clear</a>{% endif %}
+      </form>
+    </section>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Receipt</th><th>Tenant</th><th>Date</th><th>Method</th><th class="is-numeric">Cash</th><th class="is-numeric">Withheld</th><th class="is-numeric">Settled</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for payment in payments %}
+            <tr>
+              <td><a class="table-link" href="{% url 'payment_detail' payment.pk %}">{{ payment.receipt_number }}</a></td>
+              <td><a class="table-link" href="{% url 'tenant_detail' payment.tenant.pk %}">{{ payment.tenant.business_name }}</a></td>
+              <td class="nowrap">{{ payment.date_received|date:"d M Y" }}</td>
+              <td>{{ payment.get_method_display }}</td>
+              <td class="is-numeric">{{ payment.amount|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ payment.withholding_amount|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ payment.settlement_amount|money:app_settings.currency }}</td>
+              <td>{% include 'components/badge.html' with label=payment.get_status_display tone=payment.status|status_tone %}</td>
+              <td class="is-numeric">
+                <div class="table-actions">
+                  <a class="btn btn--sm" href="{% url 'payment_detail' payment.pk %}">Open</a>
+                  <a class="btn btn--sm" href="{% url 'payment_pdf' payment.pk %}" target="_blank" rel="noopener">PDF</a>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="9">No payments match. <a href="{% url 'payment_new' %}">Record a payment</a>.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

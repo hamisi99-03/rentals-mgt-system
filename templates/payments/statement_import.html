@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Statement import #{{ import_run.pk }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'statement_imports' %}">&larr; Statement imports</a></p>
+      <h1 class="page-title">{{ import_run.get_source_display }} import #{{ import_run.pk }}</h1>
+      <p class="page-subtitle">
+        Uploaded {{ import_run.uploaded_at|date:"d M Y, H:i" }} &middot;
+        {% include 'components/badge.html' with label=import_run.get_status_display tone=import_run.status|status_tone %}
+      </p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{{ import_run.file.url }}" target="_blank" rel="noopener">Original CSV</a>
+      <a class="btn btn--primary" href="{% url 'payment_new' %}">Record payment manually</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Rows' value=counts.total hint='Imported from the file' %}
+      {% include 'components/metric_card.html' with label='Confirmed' value=counts.confirmed hint='Posted as payments' %}
+      {% include 'components/metric_card.html' with label='Ignored' value=counts.ignored hint='Never posted' %}
+      {% include 'components/metric_card.html' with label='Open' value=counts.open hint='Still need a decision' %}
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Date</th><th class="is-numeric">Amount</th><th>Reference</th><th>Payer</th><th>Suggested match</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td class="nowrap">{{ row.tx_date|date:"d M Y" }}</td>
+              <td class="is-numeric">{{ row.amount|money:app_settings.currency }}</td>
+              <td>{{ row.reference|default:"-" }}</td>
+              <td>
+                {{ row.payer_name|default:"-" }}
+                {% if row.phone %}<span class="text-faint">&middot; {{ row.phone }}</span>{% endif %}
+              </td>
+              <td>
+                {% if row.suggested_tenant %}
+                  <a class="table-link" href="{% url 'tenant_detail' row.suggested_tenant.pk %}">{{ row.suggested_tenant.business_name }}</a>
+                  {% if row.suggested_invoice %}<div class="text-faint">{{ row.suggested_invoice.invoice_number }}</div>{% endif %}
+                {% else %}
+                  <span class="text-faint">No match</span>
+                {% endif %}
+              </td>
+              <td>{% include 'components/badge.html' with label=row.get_match_status_display tone=row.match_status|status_tone %}</td>
+              <td>
+                {% if row.match_status == 'confirmed' and row.payment %}
+                  <a class="btn btn--sm" href="{% url 'payment_detail' row.payment.pk %}">{{ row.payment.receipt_number }}</a>
+                {% elif row.match_status == 'ignored' %}
+                  <span class="text-faint">Ignored</span>
+                {% else %}
+                  <div class="row">
+                    <form method="post" action="{% url 'statement_row_confirm' row.pk %}" class="row">
+                      {% csrf_token %}
+                      {% if not row.suggested_tenant %}
+                        <select class="select" name="tenant" aria-label="Tenant for row {{ row.pk }}" style="min-width:180px">
+                          <option value="">Pick tenant...</option>
+                          {% for tenant in tenants %}
+                            <option value="{{ tenant.pk }}">{{ tenant.business_name }}</option>
+                          {% endfor %}
+                        </select>
+                      {% endif %}
+                      <button type="submit" class="btn btn--sm btn--primary">Confirm</button>
+                    </form>
+                    <form method="post" action="{% url 'statement_row_ignore' row.pk %}" data-confirm="Ignore this statement row?">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn--sm">Ignore</button>
+                    </form>
+                  </div>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="7">No rows in this import.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="help-text">Confirming a row records a payment and allocates it oldest invoice first. Unmatched rows are never posted without your tenant choice.</p>
+  </div>
+{% endblock %}

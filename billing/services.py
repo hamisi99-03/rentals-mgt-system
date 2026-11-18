@@ -382,6 +382,10 @@ def generate_invoice(
                     spec.reading.invoice_line = line
                     spec.reading.save(update_fields=["invoice_line", "updated_at"])
 
+            from payments.services import apply_credit_to_invoice
+
+            apply_credit_to_invoice(invoice)
+
             return invoice, True
     except IntegrityError:
         existing = Invoice.objects.filter(lease=lease, period_start=period_start).first()

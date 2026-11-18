@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static core_extras %}
+
+{% block title %}Record payment &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'payments' %}">&larr; Payments</a></p>
+      <h1 class="page-title">Record payment</h1>
+      <p class="page-subtitle">Oldest invoice first. Edit an allocation below to override it.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'statement_imports' %}">Import statement</a>
+    </div>
+  </div>
+
+  <form method="post"
+        novalidate
+        data-payment-form
+        data-preview-url="{% url 'allocation_preview' %}"
+        data-currency="{{ app_settings.currency }}">
+    {% csrf_token %}
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Payment details</h2>
+            <p class="panel__subtitle">Cash received and withholding together settle invoices.</p>
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="flash flash--error" role="alert">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.tenant %}
+          {% include 'components/field.html' with field=form.date_received %}
+          {% include 'components/field.html' with field=form.method %}
+          {% include 'components/field.html' with field=form.amount %}
+          {% include 'components/field.html' with field=form.reference %}
+
+          <div class="form-field">
+            <label class="checkbox-row" for="{{ form.has_withholding.id_for_label }}">
+              {{ form.has_withholding }}
+              <span>{{ form.has_withholding.label }}</span>
+            </label>
+            {% if form.has_withholding.help_text %}<span class="help-text">{{ form.has_withholding.help_text }}</span>{% endif %}
+            {{ form.has_withholding.errors }}
+          </div>
+          {% include 'components/field.html' with field=form.withholding_amount %}
+          {% include 'components/field.html' with field=form.withholding_cert_no %}
+          {% include 'components/field.html' with field=form.cheque_number %}
+          {% include 'components/field.html' with field=form.cheque_bank %}
+          {% include 'components/field.html' with field=form.notes %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Allocation preview</h2>
+            <p class="panel__subtitle">Unallocated money becomes tenant credit.</p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Invoice</th><th>Due</th><th class="is-numeric">Balance</th><th class="is-numeric">Allocate</th></tr>
+            </thead>
+            <tbody id="allocation-body">
+              {% for row in preview_rows %}
+                <tr>
+                  <td>
+                    <a class="table-link" href="{% url 'invoice_detail' row.invoice.pk %}" target="_blank" rel="noopener">{{ row.invoice.invoice_number }}</a>
+                  </td>
+                  <td class="nowrap">{{ row.invoice.due_date|date:"d M Y" }}</td>
+                  <td class="is-numeric">{{ row.invoice.balance|money:app_settings.currency }}</td>
+                  <td class="is-numeric">
+                    <input class="input allocation-input" type="number" step="0.01" min="0"
+                           name="allocation_{{ row.invoice.pk }}" value="{{ row.amount|floatformat:2 }}"
+                           aria-label="Allocate to {{ row.invoice.invoice_number }}">
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td class="table-empty" colspan="4">Choose a tenant and amount to see invoices.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="row row--between mt-md">
+          <span class="text-muted">Credit carried forward</span>
+          <strong id="allocation-credit">{{ preview_credit|money:app_settings.currency }}</strong>
+        </div>
+        <p class="help-text">Allocations cannot exceed the payment plus withholding or an invoice balance.</p>
+      </section>
+    </div>
+
+    <div class="form-actions">
+      <a class="btn" href="{% url 'payments' %}">Cancel</a>
+      <button type="submit" class="btn btn--primary">Save and print receipt</button>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/payments.js' %}"></script>
+{% endblock %}

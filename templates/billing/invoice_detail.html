@@ -13,6 +13,7 @@
     <div class="page-actions">
       <a class="btn" href="{% url 'tenant_detail' invoice.tenant.pk %}">Tenant</a>
       <a class="btn" href="{% url 'unit_detail' invoice.unit.pk %}">Unit</a>
+      <a class="btn" href="{% url 'payment_new' %}?tenant={{ invoice.tenant.pk }}&invoice={{ invoice.pk }}">Record payment</a>
       <a class="btn btn--primary" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">Print PDF</a>
     </div>
   </div>
@@ -20,7 +21,8 @@
   <div class="stack">
     <div class="metric-grid">
       {% include 'components/metric_card.html' with label='Total' value=invoice.total|money:app_settings.currency hint='Amount payable' %}
-      {% include 'components/metric_card.html' with label='Subtotal' value=invoice.subtotal|money:app_settings.currency hint='Line amounts' %}
+      {% include 'components/metric_card.html' with label='Paid' value=invoice.amount_paid|money:app_settings.currency hint='Payments and credit' %}
+      {% include 'components/metric_card.html' with label='Balance' value=invoice.balance|money:app_settings.currency hint='Still due' %}
       {% if has_vat %}
         {% include 'components/metric_card.html' with label='VAT' value=invoice.vat_amount|money:app_settings.currency hint='Snapshotted at issue' %}
       {% endif %}
@@ -61,6 +63,34 @@
             <dt><strong>Total</strong></dt><dd class="numeric"><strong>{{ invoice.total|money:app_settings.currency }}</strong></dd>
           </div>
         </div>
+
+        <div class="form-section">
+          <h3 class="form-section__title">Payments and credit</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Source</th><th>Date</th><th class="is-numeric">Amount</th></tr></thead>
+              <tbody>
+                {% for allocation in allocations %}
+                  <tr>
+                    <td><a class="table-link" href="{% url 'payment_detail' allocation.payment.pk %}">{{ allocation.payment.receipt_number }}</a></td>
+                    <td class="nowrap">{{ allocation.payment.date_received|date:"d M Y" }}</td>
+                    <td class="is-numeric">{{ allocation.amount|money:app_settings.currency }}</td>
+                  </tr>
+                {% endfor %}
+                {% for entry in credit_entries %}
+                  <tr>
+                    <td>Credit applied{% if entry.payment %} from {{ entry.payment.receipt_number }}{% endif %}</td>
+                    <td class="nowrap">{{ entry.entry_date|date:"d M Y" }}</td>
+                    <td class="is-numeric">{{ entry.amount|money:app_settings.currency }}</td>
+                  </tr>
+                {% endfor %}
+                {% if not allocations and not credit_entries %}
+                  <tr><td class="table-empty" colspan="3">No payments or credit applied yet.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <section class="panel">
@@ -78,6 +108,7 @@
           <dt>Issued</dt><dd>{{ invoice.issue_date|date:"d M Y" }}</dd>
           <dt>Due</dt><dd>{{ invoice.due_date|date:"d M Y" }}</dd>
           <dt>Status</dt><dd>{% include 'components/badge.html' with label=invoice.get_status_display tone=invoice.status|status_tone %}</dd>
+          <dt>Payment</dt><dd>{% include 'components/badge.html' with label=invoice.payment_status|capfirst tone=invoice.payment_status|status_tone %}</dd>
         </dl>
         {% if invoice.is_void and invoice.void_reason %}
           <p class="text-danger mt-md">{{ invoice.void_reason }}</p>

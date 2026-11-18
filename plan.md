@@ -21,7 +21,7 @@ You are a senior Django engineer. Build an offline desktop application for manag
 1. All money is Decimal (DecimalField, 2 places). Never float.
 2. Balances are DERIVED from invoices, payments and allocations (a ledger). Never editable by hand.
 3. Tax rates, thresholds, numbering formats and message templates live in a Settings model, never in code.
-4. 4. Every create, update and delete of business data writes an AuditLog entry (time, model, object, before/after). The log is visible to the owner and cannot be edited or deleted from the UI.
+4. Every create, update and delete of business data writes an AuditLog entry (user, time, model, object, before/after). The log is visible to both roles and cannot be edited or deleted from the UI.
 5. Deposits are a liability held for the tenant, not income.
 6. Destructive actions need confirmation. Records with history are archived or voided, never hard-deleted.
 7. Every phase ships with tests. Billing and payment allocation need especially thorough tests (write them first).
@@ -93,6 +93,16 @@ Acceptance: dashboard numbers reconcile exactly with the ledger.
 4. PyInstaller Windows installer and a first-run wizard (company details, backup folder, create the first user, choose palette).
 5. User guide (screens, month-end routine, backup and restore, changing themes) and developer README.
 6. Final checklist: restore-from-backup drill, month-end reconciliation steps, list of every deviation from docs/ files, known limitations.
+## Delivery for a non-technical owner (must-haves)
+- The owner never uses a terminal. Ship a single Windows installer (PyInstaller + Inno Setup) that installs the app, creates a desktop shortcut and a Start menu entry, and includes an uninstaller.
+- The app must run migrations automatically at startup and back up the database first.
+- User data lives in a per-user data folder (AppData) outside the install folder, so updates and reinstalls never touch it.
+- First-run wizard: company details, logo, backup drive, owner password, recovery code, theme choice.
+- Auto backup runs on exit and daily to the chosen drive; show a clear, calm warning on the dashboard if the drive is missing or the last backup is older than 7 days.
+- All errors shown to the user are plain-language messages. Full details go to a log file only.
+- Add a Help and Support screen with: app version, last backup time, a button to open the data folder, a button to export a support bundle (logs and version, no business data), and a short built-in guide to the month-end routine.
+- Write docs/OWNER_GUIDE.md (plain language, step by step, no technical terms) and docs/RUNNING.md for me as the developer.
+- Test the installer on a clean Windows machine with no Python installed.
 
 ## Working protocol
 - Before each phase, list what you will build and any assumption you are making. Ask me before deciding anything that affects money calculations.

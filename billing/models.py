@@ -5,6 +5,8 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 
 from core.models import TimeStampedModel
 
@@ -126,6 +128,50 @@ class Invoice(TimeStampedModel):
     @property
     def is_void(self):
         return self.status == self.STATUS_VOID
+
+    @property
+    def allocated_amount(self):
+        return sum(
+            (
+                allocation.amount
+                for allocation in self.allocations.filter(payment__status="posted")
+            ),
+            Decimal("0.00"),
+        )
+
+    @property
+    def credit_applied(self):
+        from payments.models import CreditEntry
+
+        value = sum(
+            (
+                entry.amount
+                for entry in self.credit_entries.filter(
+                    source=CreditEntry.SOURCE_APPLIED,
+                ).filter(Q(payment__isnull=True) | Q(payment__status="posted"))
+            ),
+            Decimal("0.00"),
+        )
+        return -value
+
+    @property
+    def amount_paid(self):
+        return self.allocated_amount + self.credit_applied
+
+    @property
+    def balance(self):
+        remaining = self.total - self.amount_paid
+        return remaining if remaining > 0 else Decimal("0.00")
+
+    @property
+    def payment_status(self):
+        if self.balance <= 0:
+            return "paid"
+        if self.due_date and self.due_date < timezone.localdate():
+            return "overdue"
+        if self.amount_paid > 0:
+            return "partial"
+        return "unpaid"
 
 
 class InvoiceLine(TimeStampedModel):

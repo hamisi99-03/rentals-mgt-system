@@ -9,9 +9,9 @@
       <p class="page-subtitle">{% now "F Y" %} &middot; {{ app_settings.company_name }}</p>
     </div>
     <div class="page-actions">
-      <button type="button" class="btn btn--primary" disabled title="Available in Phase 4">
+      <a class="btn btn--primary" href="{% url 'payment_new' %}">
         {% include 'components/icon.html' with name='plus' %} Record payment
-      </button>
+      </a>
     </div>
   </div>
 
