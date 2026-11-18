@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Activity log &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Activity log</h1>
+      <p class="page-subtitle">Every create, update, delete, login, backup and restore. This log cannot be edited or deleted.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'settings' %}">Back to settings</a>
+    </div>
+  </div>
+
+  <form method="get" class="row mb-md">
+    <div class="form-field" style="min-width:260px">
+      <label class="sr-only" for="activity-search">Search activity</label>
+      <input class="input" id="activity-search" type="search" name="q" value="{{ query }}" placeholder="Search user, model or record...">
+    </div>
+    <div class="form-field" style="min-width:180px">
+      <label class="sr-only" for="activity-action">Action</label>
+      <select class="select" id="activity-action" name="action">
+        <option value="">All actions</option>
+        {% for value, label in action_choices %}
+          <option value="{{ value }}"{% if value == action %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn">Filter</button>
+    {% if query or action %}<a class="btn btn--ghost" href="{% url 'activity_log' %}">Clear</a>{% endif %}
+  </form>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Record</th>
+          <th>Object</th>
+          <th>Changed</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in page_obj %}
+          <tr>
+            <td class="nowrap">{{ entry.timestamp|date:"d M Y, H:i" }}</td>
+            <td>{% if entry.user %}{{ entry.user.display_name }}{% else %}<span class="text-faint">System</span>{% endif %}</td>
+            <td>
+              {% if entry.action == 'create' %}<span class="badge badge--ok">Create</span>
+              {% elif entry.action == 'update' %}<span class="badge badge--accent">Update</span>
+              {% elif entry.action == 'delete' %}<span class="badge badge--bad">Delete</span>
+              {% elif entry.action == 'void' %}<span class="badge badge--bad">Void</span>
+              {% elif entry.action == 'login' %}<span class="badge badge--plain">Login</span>
+              {% elif entry.action == 'backup' %}<span class="badge badge--plain">Backup</span>
+              {% elif entry.action == 'restore' %}<span class="badge badge--warn">Restore</span>
+              {% else %}<span class="badge">{{ entry.action|capfirst }}</span>{% endif %}
+            </td>
+            <td class="nowrap">{{ entry.model }}</td>
+            <td>{{ entry.object_repr|default:"-" }}</td>
+            <td class="text-muted">{{ entry.changes|audit_summary }}</td>
+          </tr>
+        {% empty %}
+          <tr><td class="table-empty" colspan="6">No activity recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+    <div class="row row--between mt-md">
+      <span class="text-faint">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <div class="row">
+        {% if page_obj.has_previous %}
+          <a class="btn btn--sm" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if action %}&action={{ action }}{% endif %}">Previous</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a class="btn btn--sm" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if action %}&action={{ action }}{% endif %}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

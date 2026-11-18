@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">{% now "F Y" %} &middot; {{ app_settings.company_name }}</p>
+    </div>
+    <div class="page-actions">
+      <button type="button" class="btn btn--primary" disabled title="Available in Phase 4">
+        {% include 'components/icon.html' with name='plus' %} Record payment
+      </button>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Rent due' value='0' hint='No billing runs yet' %}
+      {% include 'components/metric_card.html' with label='Collected' value='0' hint='This month' %}
+      {% include 'components/metric_card.html' with label='Arrears' value='0' hint='Nothing overdue' %}
+      {% include 'components/metric_card.html' with label='Occupied' value='0 / 0' hint='No units imported yet' %}
+    </div>
+
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Income vs expenses</h2>
+            <p class="panel__subtitle">Last 6 months</p>
+          </div>
+        </div>
+        {% include 'components/empty_state.html' with icon='reports' title='No chart data yet' text='Income and expense charts appear once invoices and payments exist.' %}
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Arrears by age</h2>
+            <p class="panel__subtitle">Days past due</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="row row--between"><span class="text-muted">0&ndash;30 days</span><span class="numeric">0.00</span></div>
+          <div class="row row--between"><span class="text-muted">31&ndash;60 days</span><span class="numeric">0.00</span></div>
+          <div class="row row--between"><span class="text-muted">61&ndash;90 days</span><span class="numeric">0.00</span></div>
+          <div class="row row--between"><span class="text-muted">90+ days</span><span class="numeric">0.00</span></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Needs attention</h2>
+          <p class="panel__subtitle">Operational follow-ups for the building</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <tbody>
+            <tr>
+              <td>Overdue tenants</td>
+              <td class="is-numeric">0</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'payments' %}">View list</a></td>
+            </tr>
+            <tr>
+              <td>Leases ending in 60 days</td>
+              <td class="is-numeric">0</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'tenants' %}">View list</a></td>
+            </tr>
+            <tr>
+              <td>Rent increases due this month</td>
+              <td class="is-numeric">0</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'billing' %}">View list</a></td>
+            </tr>
+            <tr>
+              <td>Open maintenance requests</td>
+              <td class="is-numeric">0</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'maintenance' %}">View list</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+{% endblock %}

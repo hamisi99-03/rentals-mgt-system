@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ title }}</h1>
+      <p class="page-subtitle">{{ subtitle }}</p>
+    </div>
+  </div>
+
+  {% include 'components/empty_state.html' with icon=icon title=empty_title text=description action_url=action_url action_label=action_label %}
+
+  <p class="text-faint mt-lg">{{ phase_note }}</p>
+{% endblock %}

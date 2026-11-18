@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Settings</h1>
+      <p class="page-subtitle">Company, tax, numbering, backup and reminder defaults. Changes are audited.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'appearance' %}">{% include 'components/icon.html' with name='palette' %} Appearance</a>
+      <a class="btn" href="{% url 'backup_restore' %}">{% include 'components/icon.html' with name='database' %} Backup</a>
+      <a class="btn" href="{% url 'activity_log' %}">{% include 'components/icon.html' with name='activity' %} Activity log</a>
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <div class="stack">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Company details</h2>
+            <p class="panel__subtitle">Shown on the app shell, invoices and receipts.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.company_name %}
+          {% include 'components/field.html' with field=form.phone %}
+          {% include 'components/field.html' with field=form.email %}
+          {% include 'components/field.html' with field=form.kra_pin %}
+          {% include 'components/field.html' with field=form.currency %}
+          {% include 'components/field.html' with field=form.logo %}
+          {% include 'components/field.html' with field=form.address %}
+          {% include 'components/field.html' with field=form.letterhead_text %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Tax</h2>
+            <p class="panel__subtitle">VAT is off unless the master switch is enabled. Existing invoices are never recalculated.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.vat_enabled %}
+          {% include 'components/field.html' with field=form.vat_rate %}
+          {% include 'components/field.html' with field=form.withholding_rate %}
+        </div>
+        <p class="help-text mt-sm">Starting values are placeholders. Confirm the withholding rate with your accountant before enabling it per tenant.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Security</h2>
+            <p class="panel__subtitle">The app locks itself after a period with no activity and asks for the owner password again.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.auto_lock_minutes %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Numbering and dates</h2>
+            <p class="panel__subtitle">Format: PREFIX-SEPARATOR-UNITCODE-SEQUENCE. Sequence is per unit and per document type.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.invoice_prefix %}
+          {% include 'components/field.html' with field=form.receipt_prefix %}
+          {% include 'components/field.html' with field=form.number_separator %}
+          {% include 'components/field.html' with field=form.number_padding %}
+          {% include 'components/field.html' with field=form.invoice_due_day %}
+          {% include 'components/field.html' with field=form.renewal_alert_days %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Backup</h2>
+            <p class="panel__subtitle">Folder on a USB drive or external disk. Leave blank to use the app's backups folder.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.backup_folder %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Reminders</h2>
+            <p class="panel__subtitle">Template used by the overdue reminder list. Placeholders: {tenant}, {invoice}, {unit}, {balance}.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.reminder_template %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Appearance defaults</h2>
+            <p class="panel__subtitle">Default palette for new users and an optional company brand colour.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.default_palette %}
+          {% include 'components/field.html' with field=form.brand_color %}
+        </div>
+      </section>
+    </div>
+
+    <div class="form-actions">
+      <a class="btn" href="{% url 'dashboard' %}">Cancel</a>
+      <button type="submit" class="btn btn--primary">Save settings</button>
+    </div>
+  </form>
+{% endblock %}

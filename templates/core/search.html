@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Search &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Search</h1>
+      <p class="page-subtitle">
+        {% if query %}Results for &ldquo;{{ query }}&rdquo;{% else %}Search tenants, units and invoices from the top bar.{% endif %}
+      </p>
+    </div>
+  </div>
+
+  {% if query %}
+    {% include 'components/empty_state.html' with icon='search' title='No matching records' text='Tenant, unit and invoice search arrives with the property and billing phases.' %}
+  {% else %}
+    {% include 'components/empty_state.html' with icon='search' title='Start typing to search' text='Use the search box in the top bar to find a tenant, unit or invoice.' %}
+  {% endif %}
+{% endblock %}

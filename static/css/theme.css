@@ -1,0 +1,274 @@
+/*
+ * Theme stylesheet - the ONLY place colours are defined.
+ * A theme = data-mode (light|dark) + data-palette + data-density + data-text-size.
+ * Palette changes only the accent; status colours keep their meaning everywhere.
+ */
+
+:root {
+  color-scheme: light;
+
+  --surface: #f6f8fb;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eef2f7;
+  --border: #d7dee8;
+  --text-1: #0f172a;
+  --text-2: #475569;
+  --text-3: #5b6a80;
+
+  --accent: #1d4ed8;
+  --accent-contrast: #ffffff;
+  --on-accent-light: #ffffff;
+  --on-accent-dark: #0b1220;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  --accent-hover: color-mix(in srgb, var(--accent) 88%, var(--text-1));
+  --focus-ring: color-mix(in srgb, var(--accent) 60%, transparent);
+
+  --ok: #15803d;
+  --ok-soft: #dcfce7;
+  --ok-contrast: #ffffff;
+  --warn: #92400e;
+  --warn-soft: #fef3c7;
+  --warn-contrast: #ffffff;
+  --bad: #b91c1c;
+  --bad-soft: #fee2e2;
+  --bad-contrast: #ffffff;
+  --neutral: #475569;
+  --neutral-soft: #e2e8f0;
+  --neutral-contrast: #ffffff;
+
+  --status-occupied: #15803d;
+  --status-vacant: #475569;
+  --status-reserved: #b45309;
+  --status-paid: #15803d;
+  --status-partial: #b45309;
+  --status-unpaid: #475569;
+  --status-overdue: #b91c1c;
+
+  --overlay: rgba(15, 23, 42, 0.45);
+  --shadow-color: rgba(15, 23, 42, 0.12);
+  --shadow: 0 1px 2px var(--shadow-color), 0 8px 24px var(--shadow-color);
+  --shadow-sm: 0 1px 2px var(--shadow-color);
+
+  --chart-rent: var(--accent);
+  --chart-other: #7c3aed;
+  --chart-expense: var(--warn);
+  --chart-income: var(--ok);
+  --grid-line: var(--border);
+
+  --font-sans: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Mono", "Consolas", monospace;
+  --font-size-base: 14.5px;
+  --font-size-sm: 12.5px;
+  --font-size-xs: 11.5px;
+  --font-size-h1: 26px;
+  --font-size-h2: 20px;
+  --font-size-h3: 16.5px;
+  --font-size-metric: 30px;
+  --line-height-base: 1.5;
+
+  --row-padding-y: 12px;
+  --control-height: 40px;
+  --card-padding: 20px;
+  --section-gap: 24px;
+  --nav-item-height: 40px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --sidebar-width: 240px;
+  --topbar-height: 64px;
+  --content-max: 1440px;
+}
+
+/* Palettes - light mode accents */
+:root[data-palette="forest"] {
+  --accent: #166534;
+  --accent-contrast: #ffffff;
+  --chart-other: #0369a1;
+}
+
+:root[data-palette="sunset"] {
+  --accent: #92400e;
+  --accent-contrast: #ffffff;
+  --chart-other: #9d174d;
+}
+
+:root[data-palette="slate"] {
+  --accent: #334155;
+  --accent-contrast: #ffffff;
+  --chart-other: #0f766e;
+}
+
+:root[data-palette="plum"] {
+  --accent: #7e22ce;
+  --accent-contrast: #ffffff;
+  --chart-other: #0f766e;
+}
+
+/* Dark mode neutrals and status colours */
+:root[data-mode="dark"] {
+  color-scheme: dark;
+
+  --surface: #0b1220;
+  --surface-raised: #111b2e;
+  --surface-sunken: #070d17;
+  --border: #223049;
+  --text-1: #e6edf7;
+  --text-2: #aab9cd;
+  --text-3: #8b9cb3;
+
+  --accent: #60a5fa;
+  --accent-contrast: #08101f;
+
+  --ok: #4ade80;
+  --ok-soft: #12341f;
+  --ok-contrast: #052e16;
+  --warn: #fbbf24;
+  --warn-soft: #3a2a05;
+  --warn-contrast: #3b2403;
+  --bad: #f87171;
+  --bad-soft: #3a1414;
+  --bad-contrast: #3a0a0a;
+  --neutral: #94a3b8;
+  --neutral-soft: #1e293b;
+  --neutral-contrast: #0b1220;
+
+  --status-occupied: #4ade80;
+  --status-vacant: #94a3b8;
+  --status-reserved: #fbbf24;
+  --status-paid: #4ade80;
+  --status-partial: #fbbf24;
+  --status-unpaid: #94a3b8;
+  --status-overdue: #f87171;
+
+  --overlay: rgba(0, 0, 0, 0.65);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --chart-rent: var(--accent);
+  --chart-other: #c084fc;
+  --chart-expense: var(--warn);
+  --chart-income: var(--ok);
+}
+
+/* Dark mode accents */
+:root[data-mode="dark"][data-palette="ocean"] {
+  --accent: #60a5fa;
+  --accent-contrast: #08101f;
+}
+
+:root[data-mode="dark"][data-palette="forest"] {
+  --accent: #4ade80;
+  --accent-contrast: #052e16;
+  --chart-other: #38bdf8;
+}
+
+:root[data-mode="dark"][data-palette="sunset"] {
+  --accent: #fbbf24;
+  --accent-contrast: #3b2403;
+  --chart-other: #f472b6;
+}
+
+:root[data-mode="dark"][data-palette="slate"] {
+  --accent: #cbd5e1;
+  --accent-contrast: #0b1220;
+  --chart-other: #2dd4bf;
+}
+
+:root[data-mode="dark"][data-palette="plum"] {
+  --accent: #c084fc;
+  --accent-contrast: #2a0a46;
+  --chart-other: #2dd4bf;
+}
+
+/* Density */
+:root[data-density="comfortable"] {
+  --row-padding-y: 12px;
+  --control-height: 40px;
+  --card-padding: 20px;
+  --section-gap: 24px;
+  --nav-item-height: 40px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}
+
+:root[data-density="compact"] {
+  --row-padding-y: 7px;
+  --control-height: 32px;
+  --card-padding: 14px;
+  --section-gap: 16px;
+  --nav-item-height: 34px;
+  --space-xs: 2px;
+  --space-sm: 6px;
+  --space-md: 10px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+}
+
+/* Text size */
+:root[data-text-size="small"] {
+  --font-size-base: 13px;
+  --font-size-sm: 11.5px;
+  --font-size-xs: 10.5px;
+  --font-size-h1: 22px;
+  --font-size-h2: 18px;
+  --font-size-h3: 15px;
+  --font-size-metric: 25px;
+}
+
+:root[data-text-size="medium"] {
+  --font-size-base: 14.5px;
+  --font-size-sm: 12.5px;
+  --font-size-xs: 11.5px;
+  --font-size-h1: 26px;
+  --font-size-h2: 20px;
+  --font-size-h3: 16.5px;
+  --font-size-metric: 30px;
+}
+
+:root[data-text-size="large"] {
+  --font-size-base: 16px;
+  --font-size-sm: 14px;
+  --font-size-xs: 12.5px;
+  --font-size-h1: 30px;
+  --font-size-h2: 23px;
+  --font-size-h3: 19px;
+  --font-size-metric: 34px;
+}
+
+/* Fixed print-safe style. Never inherits the dark theme. */
+.print-document {
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f4f4f4;
+  --border: #cfcfcf;
+  --text-1: #000000;
+  --text-2: #1f1f1f;
+  --text-3: #3d3d3d;
+  --accent: #1d4ed8;
+  --accent-contrast: #ffffff;
+  --accent-soft: #eef2ff;
+  --ok: #166534;
+  --ok-soft: #dcfce7;
+  --warn: #92400e;
+  --warn-soft: #fef3c7;
+  --bad: #b91c1c;
+  --bad-soft: #fee2e2;
+  --neutral: #334155;
+  --neutral-soft: #e2e8f0;
+  --shadow: none;
+  --shadow-sm: none;
+}
+
+/* Palette preview swatches used by the Appearance screen. */
+.swatch--ocean { background: #1d4ed8; }
+.swatch--forest { background: #166534; }
+.swatch--sunset { background: #92400e; }
+.swatch--slate { background: #334155; }
+.swatch--plum { background: #7e22ce; }

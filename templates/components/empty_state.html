@@ -1,0 +1,8 @@
+<div class="empty-state">
+  <div class="empty-state__icon">{% include 'components/icon.html' with name=icon|default:'alert' %}</div>
+  <h3 class="empty-state__title">{{ title }}</h3>
+  {% if text %}<p class="empty-state__text">{{ text }}</p>{% endif %}
+  {% if action_url and action_label %}
+    <a class="btn btn--primary" href="{{ action_url }}">{{ action_label }}</a>
+  {% endif %}
+</div>

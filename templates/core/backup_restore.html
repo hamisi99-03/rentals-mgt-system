@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Backup &amp; restore &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Backup &amp; restore</h1>
+      <p class="page-subtitle">Backups run on app exit and automatically once a day. You can also run one now.</p>
+    </div>
+    <div class="page-actions">
+      <form method="post" action="{% url 'backup_now' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--primary">{% include 'components/icon.html' with name='database' %} Back up now</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Backup destination</h2>
+            <p class="panel__subtitle">Configured USB or external folder. A timestamped database copy and a media archive are written here.</p>
+          </div>
+        </div>
+        <p class="mb-0"><span class="text-muted">Folder:</span> <span class="kbd">{{ backup_folder }}</span></p>
+        {% if not app_settings.backup_folder %}
+          <p class="help-text mt-sm">No folder configured, so the app uses its own backups folder. Set an external folder in <a href="{% url 'settings' %}">Settings</a>.</p>
+        {% endif %}
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Restore</h2>
+            <p class="panel__subtitle">Restoring is deliberately a command-line action so it cannot be triggered by accident.</p>
+          </div>
+        </div>
+        <p class="text-muted">Run this on the PC with the app closed:</p>
+        <p><span class="kbd">python manage.py restore_backup "PATH\\TO\\rentals-YYYYMMDD-HHMMSS.sqlite3" --yes</span></p>
+        <p class="help-text mb-0">The command validates the file, takes a safety backup first, then copies it into place and writes an audit entry.</p>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Backup history</h2>
+          <p class="panel__subtitle">The {{ backup_count }} most recent attempts.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Destination</th>
+              <th class="is-numeric">Size</th>
+              <th>Result</th>
+              <th>Message</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in backups %}
+              <tr>
+                <td class="nowrap">{{ log.timestamp|date:"d M Y, H:i" }}</td>
+                <td>{{ log.destination_path|default:"-" }}</td>
+                <td class="is-numeric">{{ log.size_bytes|filesize }}</td>
+                <td>
+                  {% if log.result == 'ok' %}<span class="badge badge--ok">OK</span>
+                  {% else %}<span class="badge badge--bad">Failed</span>{% endif %}
+                </td>
+                <td class="text-muted">{{ log.message|default:"-" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="5">No backups yet. The first one runs when you close the app.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+{% endblock %}

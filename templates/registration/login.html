@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign in &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block auth_content %}
+  <div class="login-card">
+    <div class="login-brand">
+      {% if app_settings.logo %}
+        <img class="brand__logo" src="{{ app_settings.logo.url }}" alt="{{ app_settings.company_name }} logo">
+      {% else %}
+        <span class="brand__badge">{{ app_settings.company_name|first|upper }}</span>
+      {% endif %}
+      <span class="login-brand__name">{{ app_settings.company_name }}</span>
+    </div>
+
+    <h1>Sign in</h1>
+    <p class="text-muted">Rental manager for the building office.</p>
+
+    {% if request.GET.locked %}
+      <div class="flash flash--warning" role="status">Screen locked after inactivity. Enter the owner password to continue.</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="flash flash--error" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="form-stack">
+        {% include 'components/form_fields.html' with form=form %}
+      </div>
+      <button type="submit" class="btn btn--primary btn--block">Sign in</button>
+    </form>
+
+    <p class="login-footer">Sign in with the owner password. The app locks itself when left idle.</p>
+  </div>
+{% endblock %}

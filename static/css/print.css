@@ -1,0 +1,104 @@
+/* Print-safe documents. All colours are tokens defined in theme.css .print-document. */
+
+@page {
+  size: A4;
+  margin: 18mm 16mm;
+}
+
+.print-document {
+  background: var(--surface);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: 11pt;
+  line-height: 1.45;
+}
+
+.print-document .print-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16mm;
+  padding-bottom: 4mm;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6mm;
+}
+
+.print-document .print-logo {
+  max-height: 18mm;
+  max-width: 50mm;
+  object-fit: contain;
+}
+
+.print-document .print-company {
+  font-size: 13pt;
+  font-weight: 700;
+}
+
+.print-document .print-muted {
+  color: var(--text-2);
+}
+
+.print-document .print-meta {
+  text-align: right;
+  font-size: 9.5pt;
+  color: var(--text-2);
+}
+
+.print-document table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-block: 4mm;
+}
+
+.print-document th,
+.print-document td {
+  border-bottom: 1px solid var(--border);
+  padding: 2mm 2mm;
+  text-align: left;
+  vertical-align: top;
+}
+
+.print-document th {
+  background: var(--surface-sunken);
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.print-document .numeric {
+  text-align: right;
+}
+
+.print-document .print-totals {
+  margin-left: auto;
+  width: 70mm;
+}
+
+.print-document .print-totals td {
+  border: 0;
+  padding: 1mm 2mm;
+}
+
+.print-document .print-totals tr:last-child td {
+  border-top: 1px solid var(--text-1);
+  font-weight: 700;
+}
+
+.print-document .print-footer {
+  margin-top: 8mm;
+  padding-top: 3mm;
+  border-top: 1px solid var(--border);
+  font-size: 9pt;
+  color: var(--text-2);
+  text-align: center;
+}
+
+.print-document .badge {
+  border: 1px solid var(--border);
+  padding: 0.5mm 2mm;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

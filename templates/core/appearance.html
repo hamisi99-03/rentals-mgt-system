@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Appearance &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Appearance</h1>
+      <p class="page-subtitle">Change how the app looks. Changes apply instantly and are saved for your user.</p>
+    </div>
+    <div class="page-actions">
+      <span id="theme-save-status" class="text-faint" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="appearance-grid">
+      <div class="stack">
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <h2 class="panel__title">Mode</h2>
+              <p class="panel__subtitle">Match Windows follows the operating system setting.</p>
+            </div>
+          </div>
+          <div class="segmented" role="group" aria-label="Colour mode">
+            {% for radio in form.theme_mode %}
+              <label>{{ radio.tag }}<span class="segmented__text">{{ radio.choice_label }}</span></label>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <h2 class="panel__title">Palette</h2>
+              <p class="panel__subtitle">The palette changes the accent colour. Status colours keep their meaning.</p>
+            </div>
+          </div>
+          <div class="segmented" role="group" aria-label="Palette">
+            {% for radio in form.theme_palette %}
+              <label>
+                {{ radio.tag }}
+                <span class="segmented__text"><span class="swatch swatch--{{ radio.data.value }}"></span>{{ radio.choice_label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% if app_settings.brand_color %}
+            <p class="help-text mt-sm">Company brand colour {{ app_settings.brand_color }} overrides the palette accent. <a href="{% url 'settings' %}">Change it in Settings</a>.</p>
+          {% endif %}
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <h2 class="panel__title">Density</h2>
+              <p class="panel__subtitle">Compact fits more rows on screen.</p>
+            </div>
+          </div>
+          <div class="segmented" role="group" aria-label="Density">
+            {% for radio in form.theme_density %}
+              <label>{{ radio.tag }}<span class="segmented__text">{{ radio.choice_label }}</span></label>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <h2 class="panel__title">Text size</h2>
+              <p class="panel__subtitle">Scales text everywhere in the app.</p>
+            </div>
+          </div>
+          <div class="segmented" role="group" aria-label="Text size">
+            {% for radio in form.theme_text_size %}
+              <label>{{ radio.tag }}<span class="segmented__text">{{ radio.choice_label }}</span></label>
+            {% endfor %}
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <a class="btn" href="{% url 'settings' %}">Back to settings</a>
+          <button type="submit" class="btn btn--primary">Save appearance</button>
+        </div>
+      </div>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Live preview</h2>
+            <p class="panel__subtitle">A miniature dashboard using your current theme.</p>
+          </div>
+        </div>
+        <div class="preview" aria-hidden="true">
+          <div class="preview__topbar">
+            <span class="preview__dot"></span>
+            <span class="preview__dot"></span>
+            <span class="preview__dot"></span>
+            <span class="text-faint" style="margin-left:auto;font-size:var(--font-size-xs)">{{ app_settings.company_name }}</span>
+          </div>
+          <div class="preview__body">
+            <div class="preview__metrics">
+              <div class="preview__metric"><span>Rent due</span><strong>842,000</strong></div>
+              <div class="preview__metric"><span>Collected</span><strong>610,500</strong></div>
+              <div class="preview__metric"><span>Arrears</span><strong>231,500</strong></div>
+            </div>
+            <div class="preview__chart">
+              <span class="preview__bar" style="height:52%"></span>
+              <span class="preview__bar" style="height:70%"></span>
+              <span class="preview__bar preview__bar--muted" style="height:38%"></span>
+              <span class="preview__bar" style="height:84%"></span>
+              <span class="preview__bar preview__bar--muted" style="height:46%"></span>
+              <span class="preview__bar" style="height:64%"></span>
+            </div>
+            <div class="preview__row">
+              <span>Salon Bella &middot; B07</span>
+              <span class="badge badge--ok">Paid</span>
+            </div>
+            <div class="preview__row">
+              <span>Mama Mboga Ltd &middot; A01</span>
+              <span class="badge badge--bad">Overdue</span>
+            </div>
+            <div class="preview__row">
+              <span>A02 &middot; Ground floor</span>
+              <span class="badge">Vacant</span>
+            </div>
+          </div>
+        </div>
+        <p class="help-text mt-md">Invoices, receipts and statements always print in the fixed light style, never the dark theme.</p>
+      </section>
+    </div>
+  </form>
+{% endblock %}

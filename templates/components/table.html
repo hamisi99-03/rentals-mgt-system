@@ -1,0 +1,33 @@
+{% load core_extras %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        {% for col in columns %}
+          <th{% if col.numeric %} class="is-numeric"{% endif %}>{{ col.label }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          {% for col in columns %}
+            <td{% if col.numeric %} class="is-numeric"{% endif %}>
+              {% if col.kind == 'badge' %}
+                {% include 'components/badge.html' with label=row|get_item:col.key tone=row|get_item:col.tone_key %}
+              {% elif col.kind == 'link' and row.url %}
+                <a class="table-link" href="{{ row.url }}">{{ row|get_item:col.key }}</a>
+              {% else %}
+                {{ row|get_item:col.key }}
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+      {% empty %}
+        <tr>
+          <td class="table-empty" colspan="{{ columns|length }}">{{ empty_message|default:"Nothing to show yet." }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
