@@ -17,6 +17,16 @@
   </div>
 
   <div class="stack">
+    {% if backup_status.warnings %}
+      <div class="flash flash--warning" role="status">
+        <div>
+          <strong>Backup needs attention.</strong>
+          {% for warning in backup_status.warnings %}{{ warning }}{% if not forloop.last %} {% endif %}{% endfor %}
+          <a href="{% url 'backup_restore' %}">Check backup settings</a>.
+        </div>
+      </div>
+    {% endif %}
+
     <div class="metric-grid">
       {% include 'components/metric_card.html' with label='Rent due' value=summary.rent_due|money:app_settings.currency hint='Billed this month' %}
       {% include 'components/metric_card.html' with label='Collected' value=summary.collected|money:app_settings.currency hint='Payments this month' %}

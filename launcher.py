@@ -29,11 +29,23 @@ def main():
 
     django.setup()
 
+    from pathlib import Path
+
+    from django.conf import settings
     from django.core.management import call_command
 
-    call_command("migrate", interactive=False, verbosity=0)
-
     from core.backup import needs_daily_backup, perform_backup
+
+    # Back up the live database before applying any migrations.
+    db_path = Path(settings.DATABASES["default"]["NAME"])
+    if db_path.exists():
+        try:
+            perform_backup(reason="pre-migrate")
+        except Exception:
+            # Never block startup on a backup problem; the app can still migrate.
+            pass
+
+    call_command("migrate", interactive=False, verbosity=0)
 
     if needs_daily_backup():
         perform_backup(reason="daily-startup")

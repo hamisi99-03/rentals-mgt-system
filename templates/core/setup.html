@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Set up Rentals Manager{% endblock %}
+
+{% block auth_content %}
+  <div class="login-card" style="width:min(720px,100%)">
+    <h1>Set up Rentals Manager</h1>
+    <p class="text-muted">This one-time wizard creates the owner account and the company details.</p>
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <div class="form-grid">
+        {% include 'components/form_fields.html' with form=form %}
+      </div>
+      <button type="submit" class="btn btn--primary btn--block">Create owner account</button>
+    </form>
+    <p class="login-footer">Keep the recovery code shown next somewhere safe. It is the only way to reset the owner password without technical help.</p>
+  </div>
+{% endblock %}

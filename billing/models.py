@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 
 from core.models import TimeStampedModel
@@ -131,6 +131,12 @@ class Invoice(TimeStampedModel):
 
     @property
     def allocated_amount(self):
+        cached = getattr(self, "_prefetched_objects_cache", {}).get("allocations")
+        if cached is not None:
+            return sum(
+                (allocation.amount for allocation in cached if allocation.payment.status == "posted"),
+                Decimal("0.00"),
+            )
         return sum(
             (
                 allocation.amount
@@ -143,12 +149,17 @@ class Invoice(TimeStampedModel):
     def credit_applied(self):
         from payments.models import CreditEntry
 
+        cached = getattr(self, "_prefetched_objects_cache", {}).get("credit_entries")
+        if cached is None:
+            cached = self.credit_entries.filter(
+                source=CreditEntry.SOURCE_APPLIED,
+            ).filter(Q(payment__isnull=True) | Q(payment__status="posted"))
         value = sum(
             (
                 entry.amount
-                for entry in self.credit_entries.filter(
-                    source=CreditEntry.SOURCE_APPLIED,
-                ).filter(Q(payment__isnull=True) | Q(payment__status="posted"))
+                for entry in cached
+                if entry.source == CreditEntry.SOURCE_APPLIED
+                and (entry.payment_id is None or entry.payment.status == "posted")
             ),
             Decimal("0.00"),
         )
@@ -298,3 +309,19 @@ class MeterReading(TimeStampedModel):
             )
             self.consumption = self.reading_value - self.previous_value
         super().save(*args, **kwargs)
+
+
+def with_balances(queryset):
+    """Prefetch allocations and credit entries so invoice balances avoid N+1 queries."""
+    from payments.models import CreditEntry, PaymentAllocation
+
+    return queryset.prefetch_related(
+        Prefetch(
+            "allocations",
+            queryset=PaymentAllocation.objects.select_related("payment"),
+        ),
+        Prefetch(
+            "credit_entries",
+            queryset=CreditEntry.objects.select_related("payment"),
+        ),
+    )

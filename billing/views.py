@@ -20,6 +20,7 @@ from billing.models import (
     LeaseCharge,
     MeterReading,
     UtilityType,
+    with_balances,
 )
 from billing.pdf import build_invoice_pdf, build_invoices_pdf
 from billing.services import generate_period, parse_period, preview_period
@@ -106,7 +107,9 @@ def billing_generate(request):
 
 @role_required
 def invoices(request):
-    queryset = Invoice.objects.select_related("tenant", "unit").all()
+    queryset = with_balances(
+        Invoice.objects.select_related("tenant", "unit").all()
+    )
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
     period_value = request.GET.get("period", "").strip()

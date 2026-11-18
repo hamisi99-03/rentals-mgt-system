@@ -11,7 +11,11 @@ urlpatterns = [
     path("settings/activity/", views.activity_log, name="activity_log"),
     path("settings/backup/", views.backup_restore, name="backup_restore"),
     path("settings/backup/now/", views.backup_now, name="backup_now"),
+    path("setup/", views.setup, name="setup"),
     path("accounts/login/", views.AppLoginView.as_view(), name="login"),
     path("accounts/logout/", views.AppLogoutView.as_view(), name="logout"),
     path("accounts/lock/", views.lock_session, name="lock"),
+    path("help/", views.help_page, name="help_page"),
+    path("help/support-bundle/", views.support_bundle, name="support_bundle"),
+    path("help/open-data-folder/", views.open_data_folder, name="open_data_folder"),
 ]

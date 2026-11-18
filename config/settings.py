@@ -1,14 +1,34 @@
 """Django settings for the offline rentals management desktop app."""
 
 import os
+import sys
 from pathlib import Path
 
 from django.core.management.utils import get_random_string
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+APP_VERSION = "1.0.0"
+
+# Code and bundled assets. In a PyInstaller build this is the temporary _MEIPASS.
+CODE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(getattr(sys, "_MEIPASS", CODE_DIR)) if getattr(sys, "frozen", False) else CODE_DIR
+
+
+def _default_data_dir() -> Path:
+    env_dir = os.environ.get("RENTALS_DATA_DIR")
+    if env_dir:
+        return Path(env_dir)
+    if getattr(sys, "frozen", False):
+        local = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+        return Path(local) / "RentalsManager"
+    return CODE_DIR
+
+
+# User data lives outside the install folder in a packaged build.
+DATA_DIR = _default_data_dir()
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # The app is fully offline. Persist a generated secret so sessions survive restarts.
-_SECRET_FILE = BASE_DIR / "instance" / "secret_key.txt"
+_SECRET_FILE = DATA_DIR / "instance" / "secret_key.txt"
 
 
 def _load_secret_key() -> str:
@@ -81,9 +101,9 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": DATA_DIR / "db.sqlite3",
         "OPTIONS": {"timeout": 20},
-        "TEST": {"NAME": BASE_DIR / "instance" / "test_db.sqlite3"},
+        "TEST": {"NAME": DATA_DIR / "instance" / "test_db.sqlite3"},
     }
 }
 
@@ -103,10 +123,10 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = DATA_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = DATA_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -121,9 +141,27 @@ X_FRAME_OPTIONS = "DENY"
 
 MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
 
+LOG_DIR = DATA_DIR / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "root": {"handlers": ["console"], "level": "INFO"},
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname} {name} {message}",
+            "style": "{",
+        }
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "app.log"),
+            "maxBytes": 2_000_000,
+            "backupCount": 3,
+            "formatter": "verbose",
+        },
+    },
+    "root": {"handlers": ["console", "file"], "level": "INFO"},
 }

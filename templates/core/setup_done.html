@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Setup complete{% endblock %}
+
+{% block auth_content %}
+  <div class="login-card" style="width:min(620px,100%)">
+    <h1>Setup complete</h1>
+    <p class="text-muted">The owner account <strong>{{ owner.username }}</strong> is ready.</p>
+
+    <div class="panel mt-md">
+      <div class="metric-card__label">Recovery code - save this now</div>
+      <p class="kbd" style="font-size:var(--font-size-h3); display:block; padding:var(--space-md); margin-top:var(--space-sm)">{{ recovery_code }}</p>
+      <p class="help-text mb-0">This code is shown once. It can reset the owner password from the command line if the password is lost. Store it offline.</p>
+    </div>
+
+    <a class="btn btn--primary btn--block" href="{% url 'login' %}">Continue to sign in</a>
+  </div>
+{% endblock %}

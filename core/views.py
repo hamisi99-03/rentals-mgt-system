@@ -1,18 +1,31 @@
 import json
+import os
+import platform
+import zipfile
+from io import BytesIO
 
+from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from core.backup import default_backup_folder, perform_backup
+from core.backup import backup_status, default_backup_folder, perform_backup
 from core.forms import AppearanceForm, SettingsForm, StyledAuthenticationForm
-from core.models import AuditLog, BackupLog, Settings
+from core.models import AuditLog, BackupLog, Settings, User
 from core.permissions import role_required
+from core.recovery import (
+    generate_recovery_code,
+    has_recovery_code,
+    store_recovery_code,
+)
+from core.setup_forms import SetupForm
 from property.services import refresh_lease_statuses
 from reports.services import dashboard_summary
 
@@ -21,6 +34,11 @@ class AppLoginView(LoginView):
     authentication_form = StyledAuthenticationForm
     template_name = "registration/login.html"
     redirect_authenticated_user = True
+
+    def dispatch(self, request, *args, **kwargs):
+        if not User.objects.exists():
+            return redirect("setup")
+        return super().dispatch(request, *args, **kwargs)
 
 
 class AppLogoutView(LogoutView):
@@ -33,7 +51,7 @@ def dashboard(request):
     return render(
         request,
         "core/dashboard.html",
-        {"summary": dashboard_summary()},
+        {"summary": dashboard_summary(), "backup_status": backup_status()},
     )
 
 
@@ -161,3 +179,93 @@ def search(request):
 def lock_session(request):
     logout(request)
     return HttpResponse(status=204)
+
+
+def setup(request):
+    if User.objects.exists():
+        return redirect("login")
+    form = SetupForm(
+        request.POST or None, request.FILES or None
+    )
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            app_settings = Settings.load()
+            app_settings.company_name = form.cleaned_data["company_name"]
+            app_settings.address = form.cleaned_data["address"]
+            app_settings.phone = form.cleaned_data["phone"]
+            app_settings.email = form.cleaned_data["email"]
+            app_settings.kra_pin = form.cleaned_data["kra_pin"]
+            if form.cleaned_data["logo"]:
+                app_settings.logo = form.cleaned_data["logo"]
+            app_settings.letterhead_text = form.cleaned_data["letterhead_text"]
+            app_settings.backup_folder = form.cleaned_data["backup_folder"]
+            app_settings.default_palette = form.cleaned_data["default_palette"]
+            app_settings.brand_color = form.cleaned_data["brand_color"]
+            app_settings.full_clean()
+            app_settings.save()
+
+            user = User.objects.create_user(
+                username=form.cleaned_data["owner_username"],
+                password=form.cleaned_data["password1"],
+                full_name=form.cleaned_data["owner_full_name"],
+                is_staff=True,
+                is_superuser=True,
+                theme_palette=form.cleaned_data["default_palette"],
+            )
+            code = generate_recovery_code()
+            store_recovery_code(code)
+        return render(request, "core/setup_done.html", {"recovery_code": code, "owner": user})
+    return render(request, "core/setup.html", {"form": form})
+
+
+@role_required
+def help_page(request):
+    return render(
+        request,
+        "core/help.html",
+        {
+            "version": django_settings.APP_VERSION,
+            "data_dir": django_settings.DATA_DIR,
+            "backup_status": backup_status(),
+            "recovery_exists": has_recovery_code(),
+        },
+    )
+
+
+@role_required
+def support_bundle(request):
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "version.txt",
+            f"Rentals Manager {django_settings.APP_VERSION}\n"
+            f"Generated {timezone.now():%Y-%m-%d %H:%M:%S}\n"
+            f"Python {platform.python_version()}\n"
+            f"Platform {platform.platform()}\n",
+        )
+        log_file = django_settings.LOG_DIR / "app.log"
+        if log_file.exists():
+            archive.write(log_file, "logs/app.log")
+    response = HttpResponse(buffer.getvalue(), content_type="application/zip")
+    response["Content-Disposition"] = (
+        f'attachment; filename="support-bundle-{timezone.localdate():%Y%m%d}.zip"'
+    )
+    return response
+
+
+@require_POST
+@role_required
+def open_data_folder(request):
+    target = str(django_settings.DATA_DIR)
+    try:
+        if platform.system() == "Windows":
+            os.startfile(target)  # type: ignore[attr-defined]
+        else:
+            import subprocess
+
+            subprocess.Popen(["xdg-open", target])
+    except Exception as exc:  # noqa: BLE001
+        messages.error(request, f"Could not open the data folder: {exc}")
+    else:
+        messages.success(request, f"Opened {target}.")
+    return redirect("help_page")

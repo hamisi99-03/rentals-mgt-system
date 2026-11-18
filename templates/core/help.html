@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Help &amp; support &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Help &amp; support</h1>
+      <p class="page-subtitle">Version {{ version }} &middot; fully offline.</p>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Backup health</h2>
+          </div>
+        </div>
+        <dl class="definition-list">
+          <dt>Folder</dt><dd class="kbd">{{ backup_status.folder }}</dd>
+          <dt>Folder exists</dt><dd>{{ backup_status.exists|yesno:"Yes,No" }}</dd>
+          <dt>Last successful backup</dt><dd>{% if backup_status.last %}{{ backup_status.last.timestamp|date:"d M Y, H:i" }}{% else %}Never{% endif %}</dd>
+          <dt>Recovery code saved</dt><dd>{{ recovery_exists|yesno:"Yes,No" }}</dd>
+        </dl>
+        {% if backup_status.warnings %}
+          <div class="flash flash--warning mt-md" role="status">
+            {% for warning in backup_status.warnings %}<div>{{ warning }}</div>{% endfor %}
+            <a href="{% url 'backup_restore' %}">Open backup settings</a>.
+          </div>
+        {% endif %}
+        <div class="row mt-md">
+          <form method="post" action="{% url 'open_data_folder' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn">Open data folder</button>
+          </form>
+          <a class="btn" href="{% url 'support_bundle' %}">Export support bundle</a>
+        </div>
+        <p class="help-text">The support bundle contains the version, environment and log file only. It never includes tenants, invoices or payments.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Data folder</h2>
+            <p class="panel__subtitle">Updates and reinstalls never touch this folder.</p>
+          </div>
+        </div>
+        <p class="kbd" style="display:block; padding:var(--space-sm)">{{ data_dir }}</p>
+        <p class="text-muted mb-0">The database, uploaded documents, backups, logs and the generated secret key live here.</p>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Month-end routine</h2>
+          <p class="panel__subtitle">A calm checklist for the last working day of the month.</p>
+        </div>
+      </div>
+      <ol class="text-muted">
+        <li>Record every payment received and import the M-Pesa/bank statement; confirm each match.</li>
+        <li>Enter meter readings for water, electricity and other utilities.</li>
+        <li>Open Billing and generate the month's invoices. Check the skipped count and any rent-increase notes.</li>
+        <li>Print or save the invoices and receipts you need.</li>
+        <li>Review the Dashboard: rent due, arrears, overdue tenants and open maintenance.</li>
+        <li>Check Reports for arrears, income and expenses, and the tax summary.</li>
+        <li>Run a manual backup and confirm it appears in the backup history.</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">If the app will not start</h2>
+        </div>
+      </div>
+      <p class="text-muted mb-0">Open the data folder, keep a copy of the latest backup, then export a support bundle. The log file in the data folder has the full technical detail; the app itself only shows plain-language messages.</p>
+    </section>
+  </div>
+{% endblock %}

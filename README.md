@@ -10,7 +10,18 @@ Phase 2 (property core) is complete: buildings, floors and units with table and 
 
 Phase 3 (billing engine) is complete: charge types and lease charges; atomic per-unit invoice numbering; a monthly billing run with preview, selection and PDFs; 30-day proration; compounding escalation catch-up; VAT snapshots; and utility types, meter readings and utility invoice lines.
 
-Phase 4 (payments) is complete: recorded payments with allocation preview and manual overrides; cash + withholding settlement; credit created from overpayments and applied automatically at invoice generation; cheque received/banked/bounced lifecycle; A4 and thermal receipt output; payment histories on tenant statements and invoices; and M-Pesa/bank CSV statement imports with suggested matches that require confirmation. Phase 5 (operations) is complete: explicit deposit receipts and move-out settlements with checklists, final meter readings and printable settlement PDFs; prospects and vacant-unit tracking with prospect-to-lease conversion; maintenance requests that can create expenses; and categorized expenses with receipt attachments. Phase 6 (reports and dashboard) is complete: a ledger-backed dashboard with metric cards, income-vs-expense and arrears charts, needs-attention panel, date-filtered arrears, monthly income and expense, occupancy, tenant statement and tax reports with Excel and PDF exports, and an overdue reminder list with call and WhatsApp actions. The offline build bundles Chart.js locally. `plan.md` is the specification; `docs/` holds the schema, wireframes and theme rules that must be followed (the updated `docs/SCHEMA.md` makes this a single-owner app).
+Phase 4 (payments) is complete: recorded payments with allocation preview and manual overrides; cash + withholding settlement; credit created from overpayments and applied automatically at invoice generation; cheque received/banked/bounced lifecycle; A4 and thermal receipt output; payment histories on tenant statements and invoices; and M-Pesa/bank CSV statement imports with suggested matches that require confirmation. Phase 5 (operations) is complete: explicit deposit receipts and move-out settlements with checklists, final meter readings and printable settlement PDFs; prospects and vacant-unit tracking with prospect-to-lease conversion; maintenance requests that can create expenses; and categorized expenses with receipt attachments. Phase 6 (reports and dashboard) is complete: a ledger-backed dashboard with metric cards, income-vs-expense and arrears charts, needs-attention panel, date-filtered arrears, monthly income and expense, occupancy, tenant statement and tax reports with Excel and PDF exports, and an overdue reminder list with call and WhatsApp actions. The offline build bundles Chart.js locally. Phase 7 (hardening and delivery) adds the first-run owner setup wizard with a one-time recovery code, per-user data in `%LOCALAPPDATA%\RentalsManager`, backup-before-migration startup, dashboard backup warnings, a Help & Support screen with a privacy-safe support bundle, a demo seed command, coverage/performance hardening, an offline PyInstaller desktop build and an Inno Setup installer script. See `docs/OWNER_GUIDE.md`, `docs/RUNNING.md` and `docs/RELEASE_CHECKLIST.md`. `plan.md` is the specification; `docs/` holds the schema, wireframes and theme rules that must be followed (the updated `docs/SCHEMA.md` makes this a single-owner app).
+
+## Windows desktop build
+
+```powershell
+pip install -r requirements-build.txt
+.\scripts\build_windows.ps1
+# With Inno Setup 6 installed:
+.\scripts\build_windows.ps1 -Installer
+```
+
+Outputs `dist\RentalsManager\RentalsManager.exe` and, with Inno Setup, `dist\RentalsManager-Setup-1.0.0.exe`. The installer uses a per-user install and leaves business data in `%LOCALAPPDATA%\RentalsManager`.
 
 ## Stack
 
@@ -27,14 +38,9 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py createsuperuser
 ```
 
-The first account created with `createsuperuser` is the owner account. The Phase 7 first-run wizard will replace this step and add the one-time recovery code. Set the owner's display name and auto-lock period from Settings, or with:
-
-```powershell
-python manage.py shell -c "from core.models import User; u=User.objects.get(username='owner'); u.full_name='Owner Name'; u.auto_lock_minutes=15; u.save()"
-```
+Open the app (or `python manage.py runserver` and visit `/setup/`). The first-run wizard creates the owner account, company details, theme and the one-time recovery code. `createsuperuser` remains available as a developer fallback.
 
 Run the normal development server:
 
@@ -71,18 +77,15 @@ Restore validates the file, takes a safety backup first, replaces the database a
 
 ## Data location
 
-- `db.sqlite3` - application database
-- `media/` - uploads (logos, documents)
-- `backups/` - default backup folder
-- `instance/secret_key.txt` - generated Django secret key
-
-These local files are not committed.
+- Development: `db.sqlite3`, `media/`, `backups/` and `instance/` in the repository (not committed).
+- Installed app: `%LOCALAPPDATA%\RentalsManager` for the database, uploads, backups, logs, secret key and recovery hash. Reinstalling or updating the app never touches this folder.
+- Override with `RENTALS_DATA_DIR` for testing or a custom location.
 
 ## Deviations and deferrals from `docs/`
 
 - `NumberSequence` lives in `core` because invoices and later receipts share it; the fields match `docs/SCHEMA.md`.
 - `AuditLog` and `BackupLog` use the explicit `timestamp`/`user` fields listed in `docs/SCHEMA.md` instead of duplicating generic created/updated columns.
-- Per the updated `docs/SCHEMA.md`, there is one owner account: the manager role, role field and role-based checks are removed. Owner-specific password recovery codes and the first-run wizard belong to Phase 7; the auto-lock behaviour and setting are implemented now.
+- Per the updated `docs/SCHEMA.md`, there is one owner account: the manager role, role field and role-based checks are removed. The first-run setup wizard, one-time recovery code and idle auto-lock are implemented.
 - Opening balances are not in the Phase 2 importer because invoices and credit entries do not exist until the billing and payments phases.
 - Lease deletion is a terminate action, and units/tenants are archived rather than hard-deleted, following the no-hard-delete rule. Buildings and floors can only be deleted when empty.
 - Lease status history is read from the append-only audit log because `docs/SCHEMA.md` defines no separate status-history table.

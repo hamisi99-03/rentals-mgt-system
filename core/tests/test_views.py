@@ -18,7 +18,10 @@ def owner(django_user_model):
     )
 
 
-def test_login_page_renders(client):
+def test_login_page_renders(client, django_user_model):
+    django_user_model.objects.create_user(
+        username="someone", password="secret-pass-123"
+    )
     response = client.get("/accounts/login/")
     assert response.status_code == 200
     assert b"Sign in" in response.content

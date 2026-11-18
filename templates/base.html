@@ -100,6 +100,9 @@
                 <a class="menu-link" href="{% url 'backup_restore' %}">
                   {% include 'components/icon.html' with name='database' %} Backup &amp; restore
                 </a>
+                <a class="menu-link" href="{% url 'help_page' %}">
+                  {% include 'components/icon.html' with name='alert' %} Help &amp; support
+                </a>
                 <hr class="divider">
                 <form method="post" action="{% url 'logout' %}">
                   {% csrf_token %}

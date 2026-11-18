@@ -20,7 +20,7 @@ def default_backup_folder() -> Path:
     configured = Settings.load().backup_folder.strip()
     if configured:
         return Path(configured)
-    return Path(django_settings.BASE_DIR) / "backups"
+    return Path(django_settings.DATA_DIR) / "backups"
 
 
 def _timestamp() -> str:
@@ -175,3 +175,26 @@ def perform_restore(source_path, user=None, media_zip=None, target_db=None) -> B
         user=user,
     )
     return log
+
+
+def backup_status():
+    """Status for the dashboard warning: missing folder or stale backup."""
+    folder = default_backup_folder()
+    last = last_successful_backup()
+    warnings = []
+    if not folder.exists():
+        warnings.append(f"Backup folder is missing: {folder}")
+    if last is None:
+        warnings.append("No successful backup has been made yet.")
+    else:
+        age = timezone.now() - last.timestamp
+        if age > timedelta(days=7):
+            warnings.append(
+                f"The last successful backup was {age.days} days ago."
+            )
+    return {
+        "folder": folder,
+        "last": last,
+        "exists": folder.exists(),
+        "warnings": warnings,
+    }

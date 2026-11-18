@@ -8,7 +8,7 @@ from urllib.parse import quote
 from django.db.models import Sum
 from django.utils import timezone
 
-from billing.models import Invoice, InvoiceLine
+from billing.models import Invoice, InvoiceLine, with_balances
 from billing.services import add_months
 from core.models import Settings
 from operations.models import Expense, MaintenanceRequest
@@ -82,7 +82,7 @@ def expenses_between(start, end) -> Decimal:
 
 def overdue_invoices(as_of=None):
     as_of = as_of or timezone.localdate()
-    invoices = (
+    invoices = with_balances(
         Invoice.objects.filter(
             status=Invoice.STATUS_ISSUED,
             due_date__lt=as_of,
