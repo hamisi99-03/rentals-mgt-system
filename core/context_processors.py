@@ -38,6 +38,10 @@ def app_context(request):
     if active_nav is None:
         if url_name in SETTINGS_SUBPAGES:
             active_nav = "settings"
+        elif url_name.startswith(("unit", "building", "floor")):
+            active_nav = "units"
+        elif url_name.startswith(("tenant", "contact", "lease")):
+            active_nav = "tenants"
         else:
             active_nav = url_name
 

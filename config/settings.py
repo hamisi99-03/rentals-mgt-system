@@ -1,4 +1,4 @@
-﻿"""Django settings for the offline rentals management desktop app."""
+"""Django settings for the offline rentals management desktop app."""
 
 import os
 from pathlib import Path

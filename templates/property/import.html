@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Import data &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Import data</h1>
+      <p class="page-subtitle">Bring in buildings, floors, units, tenants and leases from Excel.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'import_template' %}">{% include 'components/icon.html' with name='database' %} Download template</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Before you import</h2>
+          <p class="panel__subtitle">Every row is validated first. If any row has an error, nothing is committed.</p>
+        </div>
+      </div>
+      <ul class="text-muted">
+        <li>The template sheets are Buildings, Floors, Units, Tenants and Leases. Leave a sheet empty if you do not need it.</li>
+        <li>Existing building, floor and tenant names are reused. Unit codes and tenant business names must not already exist.</li>
+        <li>Only one active lease may overlap a unit. Occupied status is derived from leases, never imported directly.</li>
+        <li>Opening balances are imported after the billing phase, when invoices and credit entries exist.</li>
+      </ul>
+    </section>
+
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Upload a workbook</h2>
+            <p class="panel__subtitle">.xlsx only. Existing data is never overwritten.</p>
+          </div>
+        </div>
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          {% include 'components/form_fields.html' with form=form %}
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary">Validate and import</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Template columns</h2>
+          </div>
+        </div>
+        <dl class="definition-list">
+          <dt>Buildings</dt><dd>name, address, notes</dd>
+          <dt>Floors</dt><dd>building, name, sort_order</dd>
+          <dt>Units</dt><dd>building, floor, code, size_sqm, base_rent, status, notes</dd>
+          <dt>Tenants</dt><dd>business_name, trade, id_or_kra_pin, permit_number, vat_applicable, withholding_applicable, primary_unit_code, status, notes, contact fields</dd>
+          <dt>Leases</dt><dd>unit_code, tenant_business_name, start_date, end_date, monthly_rent, deposit_amount, escalation fields, status, notes</dd>
+        </dl>
+        <p class="help-text mt-sm">Dates use YYYY-MM-DD or DD/MM/YYYY. Yes/no fields accept yes/no, true/false or 1/0.</p>
+      </section>
+    </div>
+
+    {% if counts %}
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Import complete</h2>
+            <p class="panel__subtitle">The records below were created in one transaction.</p>
+          </div>
+        </div>
+        <div class="import-summary">
+          {% for sheet, count in counts.items %}
+            <span class="badge badge--ok">{{ sheet }}: {{ count }}</span>
+          {% endfor %}
+        </div>
+        <div class="row mt-md">
+          <a class="btn" href="{% url 'units' %}">View units</a>
+          <a class="btn" href="{% url 'tenants' %}">View tenants</a>
+          <a class="btn" href="{% url 'leases' %}">View leases</a>
+        </div>
+      </section>
+    {% endif %}
+
+    {% if preview and preview.errors %}
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Errors - nothing imported</h2>
+            <p class="panel__subtitle">{{ preview.errors|length }} row error{{ preview.errors|length|pluralize }}. Fix the workbook and upload it again.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Sheet</th><th class="is-numeric">Row</th><th>Problem</th></tr></thead>
+            <tbody>
+              {% for error in preview.errors %}
+                <tr>
+                  <td class="nowrap">{{ error.sheet }}</td>
+                  <td class="is-numeric">{{ error.row }}</td>
+                  <td class="import-error-cell">{{ error.message }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% elif preview and not committed %}
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Ready to import</h2>
+            <p class="panel__subtitle">No row errors were found.</p>
+          </div>
+        </div>
+        <div class="import-summary">
+          {% for sheet, count in preview.counts.items %}
+            <span class="badge badge--accent">{{ sheet }}: {{ count }}</span>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ title }}</h1>
+      <p class="page-subtitle">Shop unit details and rent.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'units' %}">Back to units</a>
+    </div>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <section class="panel">
+      <div class="form-grid">
+        {% include 'components/form_fields.html' with form=form %}
+      </div>
+      <div class="form-actions">
+        <a class="btn" href="{% if unit %}{% url 'unit_detail' unit.pk %}{% else %}{% url 'units' %}{% endif %}">Cancel</a>
+        <button type="submit" class="btn btn--primary">Save unit</button>
+      </div>
+    </section>
+  </form>
+{% endblock %}

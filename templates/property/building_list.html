@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Buildings &amp; floors &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'units' %}">&larr; Units</a></p>
+      <h1 class="page-title">Buildings &amp; floors</h1>
+      <p class="page-subtitle">Branches, floors and their unit counts.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'unit_create' %}">New unit</a>
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">All buildings</h2>
+          <p class="panel__subtitle">Open a building to manage its floors.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Building</th><th>Address</th><th class="is-numeric">Floors</th><th class="is-numeric">Units</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for building in buildings %}
+              <tr>
+                <td><a class="table-link" href="{% url 'building_detail' building.pk %}">{{ building.name }}</a></td>
+                <td class="text-muted">{{ building.address|default:"-"|truncatechars:50 }}</td>
+                <td class="is-numeric">{{ building.floors.all|length }}</td>
+                <td class="is-numeric">{{ building.units.all|length }}</td>
+                <td class="is-numeric"><a class="btn btn--sm" href="{% url 'building_detail' building.pk %}">Open</a></td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="5">No buildings yet. Add the first one on the right.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Add a building</h2>
+          <p class="panel__subtitle">Floors are added inside the building.</p>
+        </div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include 'components/form_fields.html' with form=form %}
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">Create building</button>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

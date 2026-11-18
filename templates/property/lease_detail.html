@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Lease {{ lease.unit.code }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'leases' %}">&larr; Leases</a></p>
+      <h1 class="page-title">Lease &middot; {{ lease.unit.code }}</h1>
+      <p class="page-subtitle">
+        <a href="{% url 'tenant_detail' lease.tenant.pk %}">{{ lease.tenant.business_name }}</a>
+        &middot; {{ lease.start_date|date:"d M Y" }} to {{ lease.end_date|date:"d M Y" }}
+      </p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'lease_edit' lease.pk %}">Edit</a>
+      {% if lease.status != 'terminated' %}
+        <button type="button" class="btn btn--danger" data-dialog-open="terminate-dialog">Terminate</button>
+      {% endif %}
+      <a class="btn" href="{% url 'unit_detail' lease.unit.pk %}">Unit</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Monthly rent' value=lease.monthly_rent|money:app_settings.currency hint='Base rent' %}
+      {% include 'components/metric_card.html' with label='Deposit' value=lease.deposit_amount|money:app_settings.currency hint='Held for the tenant' %}
+      {% include 'components/metric_card.html' with label='Status' value=lease.get_status_display hint='Lease state' %}
+      {% include 'components/metric_card.html' with label='Next escalation' value=lease.next_escalation_date|date:"d M Y"|default:"None" hint=lease.get_escalation_type_display %}
+    </div>
+
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Lease details</h2>
+          </div>
+        </div>
+        <dl class="definition-list">
+          <dt>Tenant</dt><dd><a href="{% url 'tenant_detail' lease.tenant.pk %}">{{ lease.tenant.business_name }}</a></dd>
+          <dt>Unit</dt><dd><a href="{% url 'unit_detail' lease.unit.pk %}">{{ lease.unit.code }}</a> &middot; {{ lease.unit.building.name }}, {{ lease.unit.floor.name }}</dd>
+          <dt>Start</dt><dd>{{ lease.start_date|date:"d M Y" }}</dd>
+          <dt>End</dt><dd>{{ lease.end_date|date:"d M Y" }}</dd>
+          <dt>Rent</dt><dd>{{ lease.monthly_rent|money:app_settings.currency }}</dd>
+          <dt>Deposit</dt><dd>{{ lease.deposit_amount|money:app_settings.currency }}</dd>
+          <dt>Escalation</dt><dd>{{ lease.get_escalation_type_display }}{% if lease.escalation_type != 'none' %} &middot; {% if lease.escalation_type == 'percent' %}{{ lease.escalation_value|percentage }}{% else %}{{ lease.escalation_value|money:app_settings.currency }}{% endif %} every {{ lease.escalation_interval_months }} months{% endif %}</dd>
+          {% if lease.status == 'terminated' %}
+            <dt>Terminated</dt><dd>{{ lease.terminated_on|date:"d M Y"|default:"-" }}{% if lease.termination_reason %} &middot; {{ lease.termination_reason }}{% endif %}</dd>
+          {% endif %}
+          <dt>Notes</dt><dd>{{ lease.notes|default:"-"|linebreaksbr }}</dd>
+        </dl>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Documents</h2>
+            <p class="panel__subtitle">Signed lease and related files.</p>
+          </div>
+        </div>
+        <div class="document-list">
+          {% for document in documents %}
+            <div class="document-row">
+              <div>
+                <a href="{{ document.file.url }}" target="_blank" rel="noopener">{{ document.file.name|basename }}</a>
+                <div class="document-row__meta">{{ document.get_doc_type_display }} &middot; {{ document.uploaded_at|date:"d M Y" }}</div>
+              </div>
+              <form method="post" action="{% url 'document_delete' document.pk %}" data-confirm="Delete this document?">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--sm btn--danger">Delete</button>
+              </form>
+            </div>
+          {% empty %}
+            <p class="text-faint">No documents yet.</p>
+          {% endfor %}
+        </div>
+        <form method="post" action="{% url 'document_upload' %}" enctype="multipart/form-data" class="form-section" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="owner_type" value="lease">
+          <input type="hidden" name="owner_id" value="{{ lease.pk }}">
+          {% include 'components/form_fields.html' with form=document_form %}
+          <div class="form-actions">
+            <button type="submit" class="btn">Upload</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Rent history</h2>
+            <p class="panel__subtitle">Initial rent and later manual or escalation changes.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Effective</th><th class="is-numeric">Old rent</th><th class="is-numeric">New rent</th><th>Reason</th><th>By</th></tr></thead>
+            <tbody>
+              {% for entry in rent_history %}
+                <tr>
+                  <td>{{ entry.effective_date|date:"d M Y" }}</td>
+                  <td class="is-numeric">{{ entry.old_rent|money:app_settings.currency }}</td>
+                  <td class="is-numeric">{{ entry.new_rent|money:app_settings.currency }}</td>
+                  <td>{{ entry.get_reason_display }}</td>
+                  <td>{{ entry.changed_by.display_name|default:"System" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td class="table-empty" colspan="5">No rent history.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Status history</h2>
+            <p class="panel__subtitle">From the append-only audit log.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>When</th><th>Action</th><th>Changed</th></tr></thead>
+            <tbody>
+              {% for entry in audit_entries %}
+                <tr>
+                  <td class="nowrap">{{ entry.timestamp|date:"d M Y, H:i" }}</td>
+                  <td>{{ entry.get_action_display }}</td>
+                  <td class="text-muted">{{ entry.changes|audit_summary }}</td>
+                </tr>
+              {% empty %}
+                <tr><td class="table-empty" colspan="3">No audit entries.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <dialog id="terminate-dialog">
+    <form method="post" action="{% url 'lease_terminate' lease.pk %}">
+      {% csrf_token %}
+      <div class="dialog__header">
+        <h2 class="dialog__title">Terminate lease</h2>
+        <button type="button" class="icon-button" data-dialog-close aria-label="Close">{% include 'components/icon.html' with name='x' %}</button>
+      </div>
+      <div class="dialog__body">
+        <p class="text-muted">This ends the lease and frees the unit. The record is kept for history.</p>
+        <div class="form-grid">
+          {% include 'components/form_fields.html' with form=terminate_form %}
+        </div>
+      </div>
+      <div class="dialog__footer">
+        <button type="button" class="btn" data-dialog-close>Cancel</button>
+        <button type="submit" class="btn btn--danger">Terminate lease</button>
+      </div>
+    </form>
+  </dialog>
+{% endblock %}

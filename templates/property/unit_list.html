@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Units &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Units</h1>
+      <p class="page-subtitle">Shop units by floor with live occupancy. {{ counts.total }} shown.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'buildings' %}">{% include 'components/icon.html' with name='units' %} Buildings &amp; floors</a>
+      <a class="btn" href="{% url 'import_data' %}">{% include 'components/icon.html' with name='database' %} Import</a>
+      <a class="btn btn--primary" href="{% url 'unit_create' %}">{% include 'components/icon.html' with name='plus' %} Unit</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Units' value=counts.total hint='Matching filters' %}
+      {% include 'components/metric_card.html' with label='Occupied' value=counts.occupied hint='With an active lease' %}
+      {% include 'components/metric_card.html' with label='Vacant' value=counts.vacant hint='Ready to let' %}
+      {% include 'components/metric_card.html' with label='Reserved' value=counts.reserved hint='Held for a prospect' %}
+    </div>
+
+    <section class="panel">
+      <form method="get" class="row row--between">
+        {% if view_mode == 'grid' %}<input type="hidden" name="view" value="grid">{% endif %}
+        <div class="row">
+          <div class="form-field" style="min-width:220px">
+            <label class="sr-only" for="unit-search">Search units</label>
+            <input class="input" id="unit-search" type="search" name="q" value="{{ query }}" placeholder="Search unit, tenant or notes...">
+          </div>
+          <div class="form-field">
+            <label class="sr-only" for="unit-building">Building</label>
+            <select class="select" id="unit-building" name="building">
+              <option value="">All buildings</option>
+              {% for building in buildings %}
+                <option value="{{ building.pk }}"{% if selected_building == building.pk|stringformat:"s" %} selected{% endif %}>{{ building.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="sr-only" for="unit-floor">Floor</label>
+            <select class="select" id="unit-floor" name="floor">
+              <option value="">All floors</option>
+              {% for floor in floors %}
+                <option value="{{ floor.pk }}"{% if selected_floor == floor.pk|stringformat:"s" %} selected{% endif %}>{{ floor.building.name }} &middot; {{ floor.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="sr-only" for="unit-status">Status</label>
+            <select class="select" id="unit-status" name="status">
+              <option value="">All statuses</option>
+              {% for value, label in statuses %}
+                <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <label class="checkbox-row text-faint" style="font-size:var(--font-size-sm)">
+            <input class="checkbox" type="checkbox" name="include_inactive" value="1"{% if include_inactive %} checked{% endif %}>
+            Include archived
+          </label>
+        </div>
+        <div class="row">
+          <button type="submit" class="btn">Apply</button>
+          <a class="btn btn--ghost" href="{% url 'units' %}">Clear</a>
+          <span class="text-faint">&middot;</span>
+          {% if view_mode == 'table' %}
+            <a class="btn btn--sm" href="{% querystring view='grid' %}">Floor grid</a>
+          {% else %}
+            <a class="btn btn--sm" href="{% querystring view='table' %}">Table</a>
+          {% endif %}
+        </div>
+      </form>
+    </section>
+
+    {% if view_mode == 'table' %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Unit</th>
+              <th>Floor</th>
+              <th class="is-numeric">Size</th>
+              <th>Tenant</th>
+              <th class="is-numeric">Rent</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for unit in units %}
+              <tr>
+                <td><a class="table-link" href="{% url 'unit_detail' unit.pk %}">{{ unit.code }}</a>{% if not unit.is_active %} <span class="badge badge--plain">Archived</span>{% endif %}</td>
+                <td>{{ unit.floor.building.name }} &middot; {{ unit.floor.name }}</td>
+                <td class="is-numeric">{{ unit.size_sqm|floatformat:2 }} m&sup2;</td>
+                <td>{% if unit.current_lease %}<a class="table-link" href="{% url 'tenant_detail' unit.current_lease.tenant.pk %}">{{ unit.current_lease.tenant.business_name }}</a>{% else %}<span class="text-faint">-</span>{% endif %}</td>
+                <td class="is-numeric">{{ unit.base_rent|money:app_settings.currency }}</td>
+                <td>{% include 'components/badge.html' with label=unit.get_status_display tone=unit.status|status_tone %}</td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="6">No units match these filters. <a href="{% url 'unit_create' %}">Create a unit</a> or import a workbook.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      {% if floor_groups %}
+        <div class="stack">
+          {% for group in floor_groups %}
+            <section class="floor-block">
+              <div class="floor-block__head">
+                <h2 class="floor-block__name">{{ group.floor.name }}</h2>
+                <span class="floor-block__sub">{{ group.floor.building.name }} &middot; {{ group.units|length }} unit{{ group.units|length|pluralize }}</span>
+              </div>
+              <div class="unit-tiles">
+                {% for unit in group.units %}
+                  <a class="unit-tile unit-tile--{{ unit.status }}" href="{% url 'unit_detail' unit.pk %}">
+                    <span class="unit-tile__code">{{ unit.code }}</span>
+                    <span class="unit-tile__tenant">{% if unit.current_lease %}{{ unit.current_lease.tenant.business_name }}{% else %}{{ unit.get_status_display }}{% endif %}</span>
+                    <span class="unit-tile__rent">{{ unit.base_rent|money:app_settings.currency }}</span>
+                  </a>
+                {% endfor %}
+              </div>
+            </section>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="stack">
+          {% url 'unit_create' as unit_create_url %}
+          {% include 'components/empty_state.html' with icon='units' title='No units yet' text='Create your building, floors and units, or import the Excel template.' action_url=unit_create_url action_label='Create a unit' %}
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endblock %}

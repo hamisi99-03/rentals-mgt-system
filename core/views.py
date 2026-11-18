@@ -31,22 +31,6 @@ def dashboard(request):
 
 
 PLACEHOLDERS = {
-    "units": {
-        "title": "Units",
-        "subtitle": "Buildings, floors and shop units with live occupancy.",
-        "icon": "units",
-        "empty_title": "No units yet",
-        "description": "Create buildings, floors and units here. The table and floor-grid views arrive with the property phase.",
-        "phase_note": "Phase 2 adds unit CRUD, filters and the floor-grid view.",
-    },
-    "tenants": {
-        "title": "Tenants",
-        "subtitle": "Business tenants, contacts, documents, leases and statements.",
-        "icon": "tenants",
-        "empty_title": "No tenants yet",
-        "description": "Tenant profiles, multiple contacts, document uploads and lease history are built in the property phase.",
-        "phase_note": "Phase 2 adds tenant CRUD and the profile tabs from the wireframe.",
-    },
     "billing": {
         "title": "Billing",
         "subtitle": "Monthly invoice runs, charges, VAT, proration and numbering.",
@@ -100,8 +84,6 @@ def _make_placeholder(key):
     return view
 
 
-units = _make_placeholder("units")
-tenants = _make_placeholder("tenants")
 billing = _make_placeholder("billing")
 payments = _make_placeholder("payments")
 maintenance = _make_placeholder("maintenance")

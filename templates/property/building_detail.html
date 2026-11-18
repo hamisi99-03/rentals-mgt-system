@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ building.name }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'buildings' %}">&larr; Buildings</a></p>
+      <h1 class="page-title">{{ building.name }}</h1>
+      <p class="page-subtitle">{{ building.address|default:"No address" }}</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'units' %}?building={{ building.pk }}">View units</a>
+      <a class="btn" href="{% url 'building_edit' building.pk %}">Edit</a>
+      <form method="post" action="{% url 'building_delete' building.pk %}" data-confirm="Delete this building? Only empty buildings can be deleted.">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--danger">Delete</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Floors</h2>
+          <p class="panel__subtitle">Add floors and their sort order for the grid view.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Floor</th><th class="is-numeric">Sort order</th><th class="is-numeric">Units</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for floor in floors %}
+              <tr>
+                <td>{{ floor.name }}</td>
+                <td class="is-numeric">{{ floor.sort_order }}</td>
+                <td class="is-numeric">{{ floor.units.all|length }}</td>
+                <td class="is-numeric">
+                  <div class="table-actions">
+                    <a class="btn btn--sm" href="{% url 'floor_edit' floor.pk %}">Edit</a>
+                    <form method="post" action="{% url 'floor_delete' floor.pk %}" data-confirm="Delete this floor? Only empty floors can be deleted.">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn--sm btn--danger">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="4">No floors yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Add a floor</h2>
+        </div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">
+          {% include 'components/form_fields.html' with form=floor_form %}
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">Add floor</button>
+        </div>
+      </form>
+    </section>
+
+    {% if building.notes %}
+      <section class="panel">
+        <h2 class="panel__title">Notes</h2>
+        <p class="text-muted mb-0">{{ building.notes|linebreaksbr }}</p>
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

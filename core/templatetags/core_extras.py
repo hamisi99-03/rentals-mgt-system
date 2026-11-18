@@ -61,6 +61,27 @@ def percentage(value):
     return f"{amount.normalize():f}%"
 
 
+STATUS_TONES = {
+    "occupied": "ok",
+    "vacant": "plain",
+    "reserved": "warn",
+    "active": "ok",
+    "former": "plain",
+    "draft": "plain",
+    "expired": "warn",
+    "terminated": "bad",
+    "paid": "ok",
+    "partial": "warn",
+    "unpaid": "plain",
+    "overdue": "bad",
+}
+
+
+@register.filter
+def status_tone(status):
+    return STATUS_TONES.get(status, "plain")
+
+
 @register.simple_tag
 def badge_tone(tone):
     allowed = {"ok", "warn", "bad", "accent", "plain"}
@@ -81,6 +102,11 @@ def audit_summary(changes):
     if before:
         return "removed: " + ", ".join(sorted(before))
     return ", ".join(f"{key}={value}" for key, value in changes.items())
+
+
+@register.filter
+def basename(value):
+    return str(value).replace("\\", "/").rstrip("/").split("/")[-1]
 
 
 @register.filter

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Tenants &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Tenants</h1>
+      <p class="page-subtitle">Business tenants, contacts and leases.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'import_data' %}">{% include 'components/icon.html' with name='database' %} Import</a>
+      <a class="btn btn--primary" href="{% url 'tenant_create' %}">{% include 'components/icon.html' with name='plus' %} Tenant</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Tenants' value=counts.total hint='Matching filters' %}
+      {% include 'components/metric_card.html' with label='Active' value=counts.active hint='Current tenants' %}
+      {% include 'components/metric_card.html' with label='Former' value=counts.former hint='Archived' %}
+      {% include 'components/metric_card.html' with label='Active leases' value=counts.leases hint='Occupied units today' %}
+    </div>
+
+    <section class="panel">
+      <form method="get" class="row">
+        <div class="form-field" style="min-width:240px">
+          <label class="sr-only" for="tenant-search">Search tenants</label>
+          <input class="input" id="tenant-search" type="search" name="q" value="{{ query }}" placeholder="Search business, trade, contact or unit...">
+        </div>
+        <div class="form-field">
+          <label class="sr-only" for="tenant-status">Status</label>
+          <select class="select" id="tenant-status" name="status">
+            <option value="">All statuses</option>
+            {% for value, label in statuses %}
+              <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">Filter</button>
+        {% if query or selected_status %}<a class="btn btn--ghost" href="{% url 'tenants' %}">Clear</a>{% endif %}
+      </form>
+    </section>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Business</th><th>Trade</th><th>Unit</th><th>Contact</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for tenant in tenants %}
+            <tr>
+              <td><a class="table-link" href="{% url 'tenant_detail' tenant.pk %}">{{ tenant.business_name }}</a></td>
+              <td class="text-muted">{{ tenant.trade|default:"-" }}</td>
+              <td>{% if tenant.display_unit %}{{ tenant.display_unit.code }}{% else %}<span class="text-faint">-</span>{% endif %}</td>
+              <td>
+                {% if tenant.primary_contact %}
+                  {{ tenant.primary_contact.name }}{% if tenant.primary_contact.phone %} &middot; {{ tenant.primary_contact.phone }}{% endif %}
+                {% else %}<span class="text-faint">-</span>{% endif %}
+              </td>
+              <td>{% include 'components/badge.html' with label=tenant.get_status_display tone=tenant.status|status_tone %}</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'tenant_detail' tenant.pk %}">Open</a></td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="6">No tenants match. <a href="{% url 'tenant_create' %}">Add a tenant</a> or import a workbook.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

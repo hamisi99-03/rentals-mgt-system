@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'leases' %}">&larr; Leases</a></p>
+      <h1 class="page-title">{{ title }}</h1>
+    </div>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="stack">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Parties and period</h2>
+            <p class="panel__subtitle">A unit can only have one active lease at a time, and dates may not overlap.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.tenant %}
+          {% include 'components/field.html' with field=form.unit %}
+          {% include 'components/field.html' with field=form.start_date %}
+          {% include 'components/field.html' with field=form.end_date %}
+          {% include 'components/field.html' with field=form.status %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Rent and deposit</h2>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.monthly_rent %}
+          {% include 'components/field.html' with field=form.deposit_amount %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Escalation rule</h2>
+            <p class="panel__subtitle">Optional. No rule means the rent never changes automatically.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.escalation_type %}
+          {% include 'components/field.html' with field=form.escalation_value %}
+          {% include 'components/field.html' with field=form.escalation_interval_months %}
+          {% include 'components/field.html' with field=form.next_escalation_date %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Notes</h2>
+          </div>
+        </div>
+        {% include 'components/field.html' with field=form.notes %}
+      </section>
+    </div>
+
+    <div class="form-actions">
+      <a class="btn" href="{% if lease %}{% url 'lease_detail' lease.pk %}{% else %}{% url 'leases' %}{% endif %}">Cancel</a>
+      <button type="submit" class="btn btn--primary">Save lease</button>
+    </div>
+  </form>
+{% endblock %}

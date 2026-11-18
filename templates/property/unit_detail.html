@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Unit {{ unit.code }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'units' %}">&larr; Units</a></p>
+      <h1 class="page-title">Unit {{ unit.code }}</h1>
+      <p class="page-subtitle">{{ unit.building.name }} &middot; {{ unit.floor.name }}{% if not unit.is_active %} &middot; Archived{% endif %}</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'unit_edit' unit.pk %}">Edit</a>
+      <a class="btn" href="{% url 'lease_create' %}?unit={{ unit.pk }}">New lease</a>
+      <form method="post" action="{% url 'unit_toggle_active' unit.pk %}" data-confirm="{% if unit.is_active %}Archive this unit?{% else %}Restore this unit?{% endif %}">
+        {% csrf_token %}
+        <button type="submit" class="btn">{% if unit.is_active %}Archive{% else %}Restore{% endif %}</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Status' value=unit.get_status_display hint='Occupancy from active leases' %}
+      {% include 'components/metric_card.html' with label='Base rent' value=unit.base_rent|money:app_settings.currency hint='Per month' %}
+      {% include 'components/metric_card.html' with label='Size' value=unit.size_sqm|floatformat:2 hint='m² gross area' %}
+      {% if current_lease %}
+        {% include 'components/metric_card.html' with label='Tenant' value=current_lease.tenant.business_name hint=current_lease.start_date|date:'d M Y' %}
+      {% else %}
+        {% include 'components/metric_card.html' with label='Tenant' value='-' hint='No active lease' %}
+      {% endif %}
+    </div>
+
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Current lease</h2>
+            <p class="panel__subtitle">Active lease covering today.</p>
+          </div>
+          {% if current_lease %}<a class="btn btn--sm" href="{% url 'lease_detail' current_lease.pk %}">Open lease</a>{% endif %}
+        </div>
+        {% if current_lease %}
+          <dl class="definition-list">
+            <dt>Tenant</dt><dd><a href="{% url 'tenant_detail' current_lease.tenant.pk %}">{{ current_lease.tenant.business_name }}</a></dd>
+            <dt>Period</dt><dd>{{ current_lease.start_date|date:"d M Y" }} to {{ current_lease.end_date|date:"d M Y" }}</dd>
+            <dt>Rent</dt><dd>{{ current_lease.monthly_rent|money:app_settings.currency }}</dd>
+            <dt>Deposit</dt><dd>{{ current_lease.deposit_amount|money:app_settings.currency }}</dd>
+            <dt>Status</dt><dd>{% include 'components/badge.html' with label=current_lease.get_status_display tone=current_lease.status|status_tone %}</dd>
+          </dl>
+        {% else %}
+          {% include 'components/empty_state.html' with icon='billing' title='No active lease' text='Create a lease to occupy this unit.' %}
+        {% endif %}
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Tenants</h2>
+            <p class="panel__subtitle">Linked through leases or primary unit.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <tbody>
+              {% for tenant in tenants %}
+                <tr>
+                  <td><a class="table-link" href="{% url 'tenant_detail' tenant.pk %}">{{ tenant.business_name }}</a></td>
+                  <td class="is-numeric">{% include 'components/badge.html' with label=tenant.get_status_display tone=tenant.status|status_tone %}</td>
+                </tr>
+              {% empty %}
+                <tr><td class="table-empty">No tenants linked to this unit.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Lease history</h2>
+          <p class="panel__subtitle">All leases recorded for this unit.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Tenant</th><th>Start</th><th>End</th><th class="is-numeric">Rent</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for lease in leases %}
+              <tr>
+                <td>{{ lease.tenant.business_name }}</td>
+                <td>{{ lease.start_date|date:"d M Y" }}</td>
+                <td>{{ lease.end_date|date:"d M Y" }}</td>
+                <td class="is-numeric">{{ lease.monthly_rent|money:app_settings.currency }}</td>
+                <td>{% include 'components/badge.html' with label=lease.get_status_display tone=lease.status|status_tone %}</td>
+                <td class="is-numeric"><a class="btn btn--sm" href="{% url 'lease_detail' lease.pk %}">Open</a></td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="6">No leases yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {% if unit.notes %}
+      <section class="panel">
+        <h2 class="panel__title">Notes</h2>
+        <p class="text-muted mb-0">{{ unit.notes|linebreaksbr }}</p>
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Leases &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Leases</h1>
+      <p class="page-subtitle">All leases, their periods and rent.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'import_data' %}">{% include 'components/icon.html' with name='database' %} Import</a>
+      <a class="btn btn--primary" href="{% url 'lease_create' %}">{% include 'components/icon.html' with name='plus' %} Lease</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Leases' value=counts.total hint='Matching filters' %}
+      {% include 'components/metric_card.html' with label='Active' value=counts.active hint='Occupying units' %}
+      {% include 'components/metric_card.html' with label='Draft' value=counts.draft hint='Not yet active' %}
+      {% include 'components/metric_card.html' with label='Expired' value=counts.expired hint='End date passed' %}
+    </div>
+
+    <section class="panel">
+      <form method="get" class="row">
+        <div class="form-field" style="min-width:260px">
+          <label class="sr-only" for="lease-search">Search leases</label>
+          <input class="input" id="lease-search" type="search" name="q" value="{{ query }}" placeholder="Search tenant, unit or building...">
+        </div>
+        <div class="form-field">
+          <label class="sr-only" for="lease-status">Status</label>
+          <select class="select" id="lease-status" name="status">
+            <option value="">All statuses</option>
+            {% for value, label in statuses %}
+              <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">Filter</button>
+        {% if query or selected_status %}<a class="btn btn--ghost" href="{% url 'leases' %}">Clear</a>{% endif %}
+      </form>
+    </section>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Unit</th><th>Tenant</th><th>Start</th><th>End</th><th class="is-numeric">Rent</th><th class="is-numeric">Deposit</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for lease in leases %}
+            <tr>
+              <td><a class="table-link" href="{% url 'lease_detail' lease.pk %}">{{ lease.unit.code }}</a></td>
+              <td><a class="table-link" href="{% url 'tenant_detail' lease.tenant.pk %}">{{ lease.tenant.business_name }}</a></td>
+              <td class="nowrap">{{ lease.start_date|date:"d M Y" }}</td>
+              <td class="nowrap">{{ lease.end_date|date:"d M Y" }}</td>
+              <td class="is-numeric">{{ lease.monthly_rent|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ lease.deposit_amount|money:app_settings.currency }}</td>
+              <td>{% include 'components/badge.html' with label=lease.get_status_display tone=lease.status|status_tone %}</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'lease_detail' lease.pk %}">Open</a></td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="8">No leases match. <a href="{% url 'lease_create' %}">Create a lease</a> or import a workbook.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

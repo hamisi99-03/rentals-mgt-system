@@ -1162,3 +1162,220 @@ dialog::backdrop {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------------- Property screens ---------------- */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-lg);
+  overflow-x: auto;
+}
+
+.tab {
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-2);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--text-1);
+  background: var(--surface-sunken);
+}
+
+.tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-sm);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-sm);
+}
+
+.metric-strip__label {
+  display: block;
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.metric-strip__value {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-size-h3);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.floor-block {
+  margin-bottom: var(--space-lg);
+}
+
+.floor-block__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.floor-block__name {
+  margin: 0;
+  font-size: var(--font-size-h3);
+}
+
+.floor-block__sub {
+  color: var(--text-3);
+  font-size: var(--font-size-sm);
+}
+
+.unit-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-sm);
+}
+
+.unit-tile {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-sm);
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--status-vacant);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-1);
+  text-decoration: none;
+  min-height: 78px;
+}
+
+.unit-tile:hover {
+  border-color: var(--accent);
+  color: var(--text-1);
+}
+
+.unit-tile--occupied {
+  border-inline-start-color: var(--status-occupied);
+  background: var(--ok-soft);
+}
+
+.unit-tile--reserved {
+  border-inline-start-color: var(--status-reserved);
+  background: var(--warn-soft);
+}
+
+.unit-tile--vacant {
+  border-inline-start-color: var(--status-vacant);
+  background: var(--surface-sunken);
+}
+
+.unit-tile__code {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+}
+
+.unit-tile__tenant {
+  font-size: var(--font-size-xs);
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unit-tile__rent {
+  font-size: var(--font-size-xs);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+}
+
+.summary-item__label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.summary-item__value {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-size-h3);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.form-inline {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.form-inline .form-field {
+  min-width: 150px;
+}
+
+.document-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.document-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+}
+
+.document-row__meta {
+  font-size: var(--font-size-xs);
+  color: var(--text-3);
+}
+
+.import-error-cell {
+  color: var(--bad);
+}
+
+.import-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.table-actions {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .metric-strip,
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

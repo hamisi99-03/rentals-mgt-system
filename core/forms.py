@@ -6,7 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from core.models import Settings, User
 
 
-def _apply_widget_classes(form):
+def apply_widget_classes(form):
     for field in form.fields.values():
         widget = field.widget
         existing = widget.attrs.get("class", "")
@@ -72,7 +72,7 @@ class SettingsForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         self.user = user
         super().__init__(*args, **kwargs)
-        _apply_widget_classes(self)
+        apply_widget_classes(self)
         self.fields["brand_color"].required = False
         self.fields["number_separator"].required = False
         if user is not None:
@@ -110,7 +110,7 @@ class AppearanceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        _apply_widget_classes(self)
+        apply_widget_classes(self)
         controls = {
             "theme_mode": "mode",
             "theme_palette": "palette",
@@ -124,7 +124,7 @@ class AppearanceForm(forms.ModelForm):
 class StyledAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        _apply_widget_classes(self)
+        apply_widget_classes(self)
         self.fields["username"].widget.attrs.update(
             {"placeholder": "Username", "autofocus": True, "autocomplete": "username"}
         )
