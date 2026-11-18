@@ -56,6 +56,7 @@ Current suite: 222 tests. Coverage and performance results are recorded in `docs
 ## Commands
 
 ```powershell
+python manage.py migrate              # required for a fresh RENTALS_DATA_DIR
 python manage.py seed_demo            # 40 units/tenants, 12 months of invoices/payments
 python manage.py seed_demo --units 5 --months 2
 python manage.py generate_invoices --period 2026-11 [--dry-run]

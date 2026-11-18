@@ -4,7 +4,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import OperationalError, transaction
 from django.utils import timezone
 
 from billing.models import UtilityType
@@ -32,7 +32,14 @@ class Command(BaseCommand):
         units_target = max(1, min(options["units"], 100))
         months = max(1, min(options["months"], 24))
 
-        if Unit.objects.exists() or Tenant.objects.exists():
+        try:
+            has_data = Unit.objects.exists() or Tenant.objects.exists()
+        except OperationalError as exc:
+            raise CommandError(
+                "Database tables are missing. Run 'python manage.py migrate' "
+                "before seeding, or start the desktop app once so it migrates."
+            ) from exc
+        if has_data:
             raise CommandError(
                 "The database already has units or tenants. Use a fresh data folder to seed."
             )

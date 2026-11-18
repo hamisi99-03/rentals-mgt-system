@@ -63,7 +63,7 @@ Measured locally with the demo seed (40 units, 480 invoices, 320 payments, 24 ex
 - Tax summary: 16 ms / 37 queries.
 - Overdue reminders: 51 ms / 44 queries.
 
-- Seed 12 months (`python manage.py seed_demo`) and re-check Dashboard, Arrears, Monthly and Tax load times after query changes.
+- Seed 12 months (`python manage.py migrate` first, then `python manage.py seed_demo`) and re-check Dashboard, Arrears, Monthly and Tax load times after query changes.
 - Schema indexes cover invoices by tenant/due date/status, payments by tenant/date, allocations by invoice, leases by unit/status and end date, audit timestamps and statement match status.
 - Re-run after any query change; the target is a responsive single-PC experience for 40-100 units and 12 months of history.
 
