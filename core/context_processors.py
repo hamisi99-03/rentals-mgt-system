@@ -51,6 +51,14 @@ def app_context(request):
             active_nav = "billing"
         elif url_name.startswith(("payment", "allocation", "cheque", "statement")):
             active_nav = "payments"
+        elif url_name.startswith(("maintenance",)):
+            active_nav = "maintenance"
+        elif url_name.startswith(("expense",)):
+            active_nav = "expenses"
+        elif url_name.startswith(("prospect", "vacanc")):
+            active_nav = "units"
+        elif url_name.startswith(("move_out", "deposit")):
+            active_nav = "tenants"
         elif url_name.startswith(("unit", "building", "floor")):
             active_nav = "units"
         elif url_name.startswith(("tenant", "contact", "lease")):

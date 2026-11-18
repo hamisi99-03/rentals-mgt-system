@@ -31,22 +31,6 @@ def dashboard(request):
 
 
 PLACEHOLDERS = {
-    "maintenance": {
-        "title": "Maintenance",
-        "subtitle": "Requests per unit with priority, cost and expense links.",
-        "icon": "maintenance",
-        "empty_title": "No maintenance requests",
-        "description": "Log requests, track status and turn completed work into an expense in the operations phase.",
-        "phase_note": "Phase 5 adds maintenance requests, deposits and move-out.",
-    },
-    "expenses": {
-        "title": "Expenses",
-        "subtitle": "Spending by category with receipt attachments.",
-        "icon": "expenses",
-        "empty_title": "No expenses yet",
-        "description": "Categories, receipts and expense entry arrive with the operations phase.",
-        "phase_note": "Phase 5 adds expense categories and receipt attachments.",
-    },
     "reports": {
         "title": "Reports",
         "subtitle": "Arrears, income and expenses, occupancy, statements and tax.",
@@ -68,8 +52,6 @@ def _make_placeholder(key):
     return view
 
 
-maintenance = _make_placeholder("maintenance")
-expenses = _make_placeholder("expenses")
 reports = _make_placeholder("reports")
 
 

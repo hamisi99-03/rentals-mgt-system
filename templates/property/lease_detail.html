@@ -17,6 +17,8 @@
       <a class="btn" href="{% url 'lease_edit' lease.pk %}">Edit</a>
       <a class="btn" href="{% url 'lease_charges' lease.pk %}">Charges</a>
       <a class="btn" href="{% url 'meter_readings' %}?unit={{ lease.unit.pk }}">Meter readings</a>
+      <a class="btn" href="{% url 'lease_deposits' lease.pk %}">Deposits</a>
+      <a class="btn" href="{% url 'move_out_create' lease.pk %}">Move out</a>
       {% if lease.status != 'terminated' %}
         <button type="button" class="btn btn--danger" data-dialog-open="terminate-dialog">Terminate</button>
       {% endif %}

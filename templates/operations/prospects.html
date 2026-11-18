@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Prospects &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Prospects &amp; vacancies</h1>
+      <p class="page-subtitle">Fill vacant units and track follow-ups.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'units' %}?status=vacant">Vacant units</a>
+      <a class="btn btn--primary" href="{% url 'prospect_create' %}">{% include 'components/icon.html' with name='plus' %} Prospect</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Prospects' value=counts.total hint='Matching filters' %}
+      {% include 'components/metric_card.html' with label='Vacant units' value=counts.vacant hint='Ready to let' %}
+      {% include 'components/metric_card.html' with label='Follow-ups due' value=counts.follow_up hint='Today or overdue' %}
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Vacant units</h2>
+          <p class="panel__subtitle">Start a prospect against a unit.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Unit</th><th>Building / floor</th><th class="is-numeric">Base rent</th><th></th></tr></thead>
+          <tbody>
+            {% for unit in vacant_units %}
+              <tr>
+                <td>{{ unit.code }}</td>
+                <td>{{ unit.building.name }} &middot; {{ unit.floor.name }}</td>
+                <td class="is-numeric">{{ unit.base_rent|money:app_settings.currency }}</td>
+                <td class="is-numeric"><a class="btn btn--sm" href="{% url 'prospect_create' %}?unit={{ unit.pk }}">Add prospect</a></td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="4">No vacant units.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <form method="get" class="row">
+        <div class="form-field" style="min-width:240px">
+          <label class="sr-only" for="prospect-search">Search prospects</label>
+          <input class="input" id="prospect-search" type="search" name="q" value="{{ query }}" placeholder="Name, business or phone...">
+        </div>
+        <div class="form-field">
+          <label class="sr-only" for="prospect-status">Status</label>
+          <select class="select" id="prospect-status" name="status">
+            <option value="">All statuses</option>
+            {% for value, label in statuses %}
+              <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">Filter</button>
+        {% if query or selected_status %}<a class="btn btn--ghost" href="{% url 'prospects' %}">Clear</a>{% endif %}
+      </form>
+    </section>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Business</th><th>Phone</th><th>Interested unit</th><th>Follow-up</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for prospect in prospects %}
+            <tr>
+              <td><a class="table-link" href="{% url 'prospect_edit' prospect.pk %}">{{ prospect.name }}</a></td>
+              <td>{{ prospect.business|default:"-" }}</td>
+              <td>{{ prospect.phone|default:"-" }}</td>
+              <td>{% if prospect.interested_unit %}{{ prospect.interested_unit.code }}{% else %}<span class="text-faint">-</span>{% endif %}</td>
+              <td>
+                {% if prospect.follow_up_date %}
+                  <span class="{% if prospect.follow_up_date <= today and prospect.status != 'converted' and prospect.status != 'lost' %}text-danger{% endif %}">{{ prospect.follow_up_date|date:"d M Y" }}</span>
+                {% else %}<span class="text-faint">-</span>{% endif %}
+              </td>
+              <td>{% include 'components/badge.html' with label=prospect.get_status_display tone=prospect.status|status_tone %}</td>
+              <td class="is-numeric">
+                <div class="table-actions">
+                  <a class="btn btn--sm" href="{% url 'prospect_edit' prospect.pk %}">Edit</a>
+                  {% if prospect.status != 'converted' and prospect.status != 'lost' %}
+                    <a class="btn btn--sm btn--primary" href="{% url 'prospect_convert' prospect.pk %}">Convert</a>
+                  {% endif %}
+                  {% if prospect.converted_lease_id %}
+                    <a class="btn btn--sm" href="{% url 'lease_detail' prospect.converted_lease_id %}">Lease</a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="7">No prospects yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

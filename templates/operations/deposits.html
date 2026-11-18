@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Deposits &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'lease_detail' lease.pk %}">&larr; Lease {{ lease.unit.code }}</a></p>
+      <h1 class="page-title">Deposits</h1>
+      <p class="page-subtitle">{{ lease.tenant.business_name }} &middot; Unit {{ lease.unit.code }}. Deposits are a liability, not income.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'move_out_create' lease.pk %}">Plan move-out</a>
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Deposits held</h2>
+          <p class="panel__subtitle">Agreed lease deposit: {{ lease.deposit_amount|money:app_settings.currency }}</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Received</th><th class="is-numeric">Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for deposit in deposits %}
+              <tr>
+                <td>{{ deposit.received_date|date:"d M Y" }}</td>
+                <td class="is-numeric">{{ deposit.amount_received|money:app_settings.currency }}</td>
+                <td>{% include 'components/badge.html' with label=deposit.get_status_display tone=deposit.status|status_tone %}</td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="3">No deposit received yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Record a deposit</h2>
+          <p class="panel__subtitle">Record what was actually received.</p>
+        </div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include 'components/form_fields.html' with form=form %}
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">Record deposit</button>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

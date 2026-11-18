@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Move-out {{ move_out.lease.unit.code }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'move_outs' %}">&larr; Move-outs</a></p>
+      <h1 class="page-title">Move-out &middot; {{ move_out.lease.unit.code }} {% include 'components/badge.html' with label=move_out.get_status_display tone=move_out.status|status_tone %}</h1>
+      <p class="page-subtitle">
+        {{ move_out.lease.tenant.business_name }} &middot; {{ move_out.move_out_date|date:"d M Y" }}
+        {% if move_out.notice_date %}&middot; notice {{ move_out.notice_date|date:"d M Y" }}{% endif %}
+      </p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'move_out_pdf' move_out.pk %}" target="_blank" rel="noopener">Print settlement</a>
+      <a class="btn" href="{% url 'lease_detail' move_out.lease.pk %}">Lease</a>
+      <a class="btn" href="{% url 'lease_deposits' move_out.lease.pk %}">Deposits</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Deposit held' value=move_out.deposit_held|money:app_settings.currency hint='Recorded receipts' %}
+      {% include 'components/metric_card.html' with label='Arrears at exit' value=move_out.arrears_at_exit|money:app_settings.currency hint='Tenant total balance' %}
+      {% include 'components/metric_card.html' with label='Damages' value=move_out.damages_amount|money:app_settings.currency hint='Checklist total' %}
+      {% include 'components/metric_card.html' with label='Refund due' value=move_out.refund_amount|money:app_settings.currency hint='Floored at zero' %}
+    </div>
+
+    {% if move_out.remaining_balance > 0 %}
+      <div class="flash flash--warning" role="status">
+        Deposit does not cover arrears and damages. Remaining tenant balance: <strong>{{ move_out.remaining_balance|money:app_settings.currency }}</strong>.
+      </div>
+    {% endif %}
+
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Checklist</h2>
+            <p class="panel__subtitle">Update condition and damage costs, then save.</p>
+          </div>
+        </div>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {{ formset.management_form }}
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Item</th><th>Condition</th><th class="is-numeric">Damage cost</th><th>Notes</th></tr></thead>
+              <tbody>
+                {% for form in formset %}
+                  <tr>
+                    <td>{{ form.item }}{{ form.id }}{{ form.item.errors }}</td>
+                    <td>{{ form.condition }}{{ form.condition.errors }}</td>
+                    <td class="is-numeric">{{ form.damage_cost }}{{ form.damage_cost.errors }}</td>
+                    <td>{{ form.notes }}{{ form.notes.errors }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {{ formset.non_form_errors }}
+          <div class="form-actions">
+            <button type="submit" class="btn">Save checklist</button>
+          </div>
+        </form>
+      </section>
+
+      <div class="stack">
+        <section class="panel">
+          <div class="panel__header">
+            <div><h2 class="panel__title">Final meter readings</h2></div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Utility</th><th class="is-numeric">Previous</th><th class="is-numeric">Reading</th><th class="is-numeric">Usage</th></tr></thead>
+              <tbody>
+                {% for reading in readings %}
+                  <tr>
+                    <td>{{ reading.utility_type.name }}</td>
+                    <td class="is-numeric">{{ reading.previous_value|floatformat:2 }}</td>
+                    <td class="is-numeric">{{ reading.reading_value|floatformat:2 }} {{ reading.utility_type.measure }}</td>
+                    <td class="is-numeric">{{ reading.consumption|floatformat:2 }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td class="table-empty" colspan="4">No final readings recorded.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div><h2 class="panel__title">Deposits</h2></div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Received</th><th class="is-numeric">Amount</th><th>Status</th></tr></thead>
+              <tbody>
+                {% for deposit in deposits %}
+                  <tr>
+                    <td>{{ deposit.received_date|date:"d M Y" }}</td>
+                    <td class="is-numeric">{{ deposit.amount_received|money:app_settings.currency }}</td>
+                    <td>{{ deposit.get_status_display }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td class="table-empty" colspan="3">No deposit recorded.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Settlement</h2>
+          <p class="panel__subtitle">Confirming refunds the deposit, terminates the lease and frees the unit.</p>
+        </div>
+      </div>
+      <dl class="definition-list">
+        <dt>Deposit held</dt><dd class="numeric">{{ move_out.deposit_held|money:app_settings.currency }}</dd>
+        <dt>Less arrears</dt><dd class="numeric">{{ move_out.arrears_at_exit|money:app_settings.currency }}</dd>
+        <dt>Less damages</dt><dd class="numeric">{{ move_out.damages_amount|money:app_settings.currency }}</dd>
+        <dt><strong>Refund due</strong></dt><dd class="numeric"><strong>{{ move_out.refund_amount|money:app_settings.currency }}</strong></dd>
+      </dl>
+      {% if move_out.settlement_notes %}
+        <p class="text-muted mt-md">{{ move_out.settlement_notes|linebreaksbr }}</p>
+      {% endif %}
+      {% if move_out.status == 'planned' %}
+        <form method="post" action="{% url 'move_out_settle' move_out.pk %}" data-confirm="Confirm the refund and settle this move-out? The lease will be terminated and the unit freed.">
+          {% csrf_token %}
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary">Confirm refund</button>
+          </div>
+        </form>
+      {% else %}
+        <p class="badge badge--ok">Settled</p>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

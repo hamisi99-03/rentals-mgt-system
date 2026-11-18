@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Plan move-out &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'lease_detail' lease.pk %}">&larr; Lease {{ lease.unit.code }}</a></p>
+      <h1 class="page-title">Plan move-out</h1>
+      <p class="page-subtitle">{{ lease.tenant.business_name }} &middot; Unit {{ lease.unit.code }}</p>
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Move-out details</h2>
+          <p class="panel__subtitle">The checklist and refund preview come on the next screen.</p>
+        </div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.notice_date %}
+          {% include 'components/field.html' with field=form.move_out_date %}
+          {% include 'components/field.html' with field=form.settlement_notes %}
+        </div>
+
+        {% if form.reading_bound_fields %}
+          <div class="form-section">
+            <h3 class="form-section__title">Final meter readings</h3>
+            <p class="form-section__hint">Optional. Enter the final readings on the move-out date.</p>
+            <div class="form-grid">
+              {% for utility_type, field in form.reading_bound_fields %}
+                <div class="form-field">
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                  {{ field.errors }}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        {% if form.non_field_errors %}<div class="flash flash--error mt-md">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="form-actions">
+          <a class="btn" href="{% url 'lease_detail' lease.pk %}">Cancel</a>
+          <button type="submit" class="btn btn--primary">Plan move-out</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div><h2 class="panel__title">Current deposit</h2></div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Received</th><th class="is-numeric">Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for deposit in lease.deposits.all %}
+              <tr>
+                <td>{{ deposit.received_date|date:"d M Y" }}</td>
+                <td class="is-numeric">{{ deposit.amount_received|money:app_settings.currency }}</td>
+                <td>{{ deposit.get_status_display }}</td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="3">No deposit recorded for this lease.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="help-text mt-sm">Record deposits on the lease before planning the move-out if the deposit was received.</p>
+      <a class="btn" href="{% url 'lease_deposits' lease.pk %}">Manage deposits</a>
+    </section>
+  </div>
+{% endblock %}

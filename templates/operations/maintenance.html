@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Maintenance &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Maintenance</h1>
+      <p class="page-subtitle">Requests per unit, priority and cost.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn btn--primary" href="{% url 'maintenance_create' %}">{% include 'components/icon.html' with name='plus' %} Request</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Requests' value=counts.total hint='Matching filters' %}
+      {% include 'components/metric_card.html' with label='Open' value=counts.open hint='Not yet done' %}
+      {% include 'components/metric_card.html' with label='Urgent' value=counts.urgent hint='Needs attention' %}
+    </div>
+
+    <section class="panel">
+      <form method="get" class="row">
+        <div class="form-field">
+          <label class="sr-only" for="maintenance-status">Status</label>
+          <select class="select" id="maintenance-status" name="status">
+            <option value="">All statuses</option>
+            {% for value, label in statuses %}
+              <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="sr-only" for="maintenance-priority">Priority</label>
+          <select class="select" id="maintenance-priority" name="priority">
+            <option value="">All priorities</option>
+            {% for value, label in priorities %}
+              <option value="{{ value }}"{% if selected_priority == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">Filter</button>
+        {% if selected_status or selected_priority %}<a class="btn btn--ghost" href="{% url 'maintenance' %}">Clear</a>{% endif %}
+      </form>
+    </section>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Unit</th><th>Title</th><th>Tenant</th><th>Priority</th><th>Status</th><th>Reported</th><th class="is-numeric">Cost</th><th></th></tr></thead>
+        <tbody>
+          {% for request in requests %}
+            <tr>
+              <td>{{ request.unit.code }}</td>
+              <td><a class="table-link" href="{% url 'maintenance_detail' request.pk %}">{{ request.title }}</a></td>
+              <td>{{ request.tenant.business_name|default:"-" }}</td>
+              <td>{% include 'components/badge.html' with label=request.get_priority_display tone=request.priority|status_tone %}</td>
+              <td>{% include 'components/badge.html' with label=request.get_status_display tone=request.status|status_tone %}</td>
+              <td class="nowrap">{{ request.reported_date|date:"d M Y" }}</td>
+              <td class="is-numeric">{{ request.cost|money:app_settings.currency }}</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'maintenance_detail' request.pk %}">Open</a></td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="8">No maintenance requests.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

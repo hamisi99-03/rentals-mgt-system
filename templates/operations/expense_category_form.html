@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'expense_categories' %}">&larr; Categories</a></p>
+      <h1 class="page-title">{{ title }}</h1>
+    </div>
+  </div>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <section class="panel">
+      <div class="form-grid">
+        {% include 'components/form_fields.html' with form=form %}
+      </div>
+      <div class="form-actions">
+        <a class="btn" href="{% url 'expense_categories' %}">Cancel</a>
+        <button type="submit" class="btn btn--primary">Save category</button>
+      </div>
+    </section>
+  </form>
+{% endblock %}

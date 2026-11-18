@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Expense &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'expenses' %}">&larr; Expenses</a></p>
+      <h1 class="page-title">{{ expense.payee }} &middot; {{ expense.amount|money:app_settings.currency }}</h1>
+      <p class="page-subtitle">{{ expense.category.name }} &middot; {{ expense.expense_date|date:"d M Y" }}</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'expense_edit' expense.pk %}">Edit</a>
+      {% if expense.maintenance_request %}
+        <a class="btn" href="{% url 'maintenance_detail' expense.maintenance_request.pk %}">Maintenance request</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel__header">
+        <div><h2 class="panel__title">Expense details</h2></div>
+      </div>
+      <dl class="definition-list">
+        <dt>Category</dt><dd>{{ expense.category.name }}</dd>
+        <dt>Date</dt><dd>{{ expense.expense_date|date:"d M Y" }}</dd>
+        <dt>Amount</dt><dd>{{ expense.amount|money:app_settings.currency }}</dd>
+        <dt>Payee</dt><dd>{{ expense.payee }}</dd>
+        <dt>Method</dt><dd>{{ expense.get_payment_method_display|default:"-" }}</dd>
+        <dt>Reference</dt><dd>{{ expense.reference|default:"-" }}</dd>
+        {% if expense.maintenance_request %}
+          <dt>Maintenance</dt><dd><a href="{% url 'maintenance_detail' expense.maintenance_request.pk %}">{{ expense.maintenance_request.title }}</a></dd>
+        {% endif %}
+      </dl>
+      {% if expense.description %}
+        <p class="text-muted mt-md">{{ expense.description|linebreaksbr }}</p>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Receipts</h2>
+          <p class="panel__subtitle">Attach a photo or PDF of the receipt.</p>
+        </div>
+      </div>
+      <div class="document-list">
+        {% for document in documents %}
+          <div class="document-row">
+            <div>
+              <a href="{{ document.file.url }}" target="_blank" rel="noopener">{{ document.file.name|basename }}</a>
+              <div class="document-row__meta">{{ document.get_doc_type_display }} &middot; {{ document.uploaded_at|date:"d M Y" }}</div>
+            </div>
+            <form method="post" action="{% url 'expense_receipt_delete' document.pk %}" data-confirm="Delete this receipt?">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--sm btn--danger">Delete</button>
+            </form>
+          </div>
+        {% empty %}
+          <p class="text-faint">No receipts attached.</p>
+        {% endfor %}
+      </div>
+      <form method="post" action="{% url 'expense_receipt_upload' expense.pk %}" enctype="multipart/form-data" class="form-section" novalidate>
+        {% csrf_token %}
+        {% include 'components/form_fields.html' with form=document_form %}
+        <div class="form-actions">
+          <button type="submit" class="btn">Upload receipt</button>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

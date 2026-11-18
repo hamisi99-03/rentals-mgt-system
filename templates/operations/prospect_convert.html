@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Convert prospect &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'prospects' %}">&larr; Prospects</a></p>
+      <h1 class="page-title">Convert {{ prospect }}</h1>
+      <p class="page-subtitle">This creates a tenant (if needed) and a lease from the prospect.</p>
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Lease details</h2>
+        </div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">
+          {% for field in form %}
+            {% if field.name != 'tenant' %}
+              {% include 'components/field.html' with field=field %}
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% if form.non_field_errors %}<div class="flash flash--error mt-md">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="form-actions">
+          <a class="btn" href="{% url 'prospects' %}">Cancel</a>
+          <button type="submit" class="btn btn--primary">Convert to lease</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div><h2 class="panel__title">Prospect</h2></div>
+      </div>
+      <dl class="definition-list">
+        <dt>Name</dt><dd>{{ prospect.name }}</dd>
+        <dt>Business</dt><dd>{{ prospect.business|default:"-" }}</dd>
+        <dt>Phone</dt><dd>{{ prospect.phone|default:"-" }}</dd>
+        <dt>Email</dt><dd>{{ prospect.email|default:"-" }}</dd>
+        <dt>Interested unit</dt><dd>{% if prospect.interested_unit %}{{ prospect.interested_unit.code }}{% else %}-{% endif %}</dd>
+        <dt>Status</dt><dd>{% include 'components/badge.html' with label=prospect.get_status_display tone=prospect.status|status_tone %}</dd>
+      </dl>
+      {% if prospect.notes %}<p class="text-muted mt-md">{{ prospect.notes|linebreaksbr }}</p>{% endif %}
+    </section>
+  </div>
+{% endblock %}

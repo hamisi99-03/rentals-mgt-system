@@ -10,7 +10,7 @@ Phase 2 (property core) is complete: buildings, floors and units with table and 
 
 Phase 3 (billing engine) is complete: charge types and lease charges; atomic per-unit invoice numbering; a monthly billing run with preview, selection and PDFs; 30-day proration; compounding escalation catch-up; VAT snapshots; and utility types, meter readings and utility invoice lines.
 
-Phase 4 (payments) is complete: recorded payments with allocation preview and manual overrides; cash + withholding settlement; credit created from overpayments and applied automatically at invoice generation; cheque received/banked/bounced lifecycle; A4 and thermal receipt output; payment histories on tenant statements and invoices; and M-Pesa/bank CSV statement imports with suggested matches that require confirmation. Operations and reports remain placeholders for their later phases. `plan.md` is the specification; `docs/` holds the schema, wireframes and theme rules that must be followed (the updated `docs/SCHEMA.md` makes this a single-owner app).
+Phase 4 (payments) is complete: recorded payments with allocation preview and manual overrides; cash + withholding settlement; credit created from overpayments and applied automatically at invoice generation; cheque received/banked/bounced lifecycle; A4 and thermal receipt output; payment histories on tenant statements and invoices; and M-Pesa/bank CSV statement imports with suggested matches that require confirmation. Phase 5 (operations) is complete: explicit deposit receipts and move-out settlements with checklists, final meter readings and printable settlement PDFs; prospects and vacant-unit tracking with prospect-to-lease conversion; maintenance requests that can create expenses; and categorized expenses with receipt attachments. Reports remain the final placeholder for Phase 6. `plan.md` is the specification; `docs/` holds the schema, wireframes and theme rules that must be followed (the updated `docs/SCHEMA.md` makes this a single-owner app).
 
 ## Stack
 
@@ -97,3 +97,11 @@ These local files are not committed.
 - Statement imports support M-Pesa CSV exports and common bank CSV headers, detect columns from the header row, and never post a row without confirmation. The row FK is stored as import_id because import is a Python keyword.
 - Thermal receipts are generated as raw ESC/POS bytes for download; choosing a physical printer and spooling it can be added once the printer configuration is known.
 - Refunds are deferred to the move-out/deposit phase; Phase 4 only creates and applies credit.
+- Deposits are explicit receipts per lease (amount + date), not auto-created from lease.deposit_amount; move-out uses the recorded held deposits.
+- Move-out refunds floor at zero when arrears plus damages exceed the deposit; the remaining tenant balance stays outstanding and is shown on the settlement.
+- Arrears at exit use the tenant's total outstanding balance, and confirming a refund terminates the lease on the move-out date and frees the unit.
+- Final meter readings are recorded on the move-out date but are not auto-invoiced; they appear on the settlement PDF.
+- Refunds update Deposit statuses and the MoveOut snapshot; no separate cash-refund ledger entry is created in this phase.
+- Planned move-outs have no cancel/delete action yet; they can be settled or edited before settlement.
+- Expense receipts use the generic Document model; expense categories are disabled rather than hard-deleted.
+- Vacancies are surfaced on the Prospects page and the Units status filter rather than as a separate sidebar screen.

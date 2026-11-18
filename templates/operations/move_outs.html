@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Move-outs &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Move-outs</h1>
+      <p class="page-subtitle">Deposit settlements and final unit checks.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'tenants' %}">Tenants</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <form method="get" class="row">
+        <div class="form-field">
+          <label class="sr-only" for="moveout-status">Status</label>
+          <select class="select" id="moveout-status" name="status">
+            <option value="">All statuses</option>
+            {% for value, label in statuses %}
+              <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">Filter</button>
+        {% if selected_status %}<a class="btn btn--ghost" href="{% url 'move_outs' %}">Clear</a>{% endif %}
+      </form>
+    </section>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Unit</th><th>Tenant</th><th>Move-out date</th><th class="is-numeric">Deposit held</th><th class="is-numeric">Arrears</th><th class="is-numeric">Damages</th><th class="is-numeric">Refund</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for move_out in move_outs %}
+            <tr>
+              <td><a class="table-link" href="{% url 'move_out_detail' move_out.pk %}">{{ move_out.lease.unit.code }}</a></td>
+              <td>{{ move_out.lease.tenant.business_name }}</td>
+              <td class="nowrap">{{ move_out.move_out_date|date:"d M Y" }}</td>
+              <td class="is-numeric">{{ move_out.deposit_held|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ move_out.arrears_at_exit|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ move_out.damages_amount|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ move_out.refund_amount|money:app_settings.currency }}</td>
+              <td>{% include 'components/badge.html' with label=move_out.get_status_display tone=move_out.status|status_tone %}</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'move_out_detail' move_out.pk %}">Open</a></td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="9">No move-outs yet. Plan one from a lease.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

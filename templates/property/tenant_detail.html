@@ -22,6 +22,7 @@
       <a class="btn" href="{% url 'tenant_edit' tenant.pk %}">Edit</a>
       <a class="btn btn--primary" href="{% url 'payment_new' %}?tenant={{ tenant.pk }}">{% include 'components/icon.html' with name='plus' %} Record payment</a>
       <a class="btn" href="{% url 'lease_create' %}?tenant={{ tenant.pk }}">New lease</a>
+      {% if current_lease %}<a class="btn" href="{% url 'move_out_create' current_lease.pk %}">Move out</a>{% endif %}
       <form method="post" action="{% url 'tenant_toggle_status' tenant.pk %}" data-confirm="{% if tenant.status == 'active' %}Mark this tenant as former?{% else %}Restore this tenant to active?{% endif %}">
         {% csrf_token %}
         <button type="submit" class="btn">{% if tenant.status == 'active' %}Archive{% else %}Restore{% endif %}</button>
