@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}{{ invoice.invoice_number }} &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'invoices' %}">&larr; Invoices</a></p>
+      <h1 class="page-title">{{ invoice.invoice_number }} {% include 'components/badge.html' with label=invoice.get_status_display tone=invoice.status|status_tone %}</h1>
+      <p class="page-subtitle">{{ invoice.tenant.business_name }} &middot; Unit {{ invoice.unit.code }} &middot; {{ invoice.period_start|date:"M Y" }}</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'tenant_detail' invoice.tenant.pk %}">Tenant</a>
+      <a class="btn" href="{% url 'unit_detail' invoice.unit.pk %}">Unit</a>
+      <a class="btn btn--primary" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">Print PDF</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Total' value=invoice.total|money:app_settings.currency hint='Amount payable' %}
+      {% include 'components/metric_card.html' with label='Subtotal' value=invoice.subtotal|money:app_settings.currency hint='Line amounts' %}
+      {% if has_vat %}
+        {% include 'components/metric_card.html' with label='VAT' value=invoice.vat_amount|money:app_settings.currency hint='Snapshotted at issue' %}
+      {% endif %}
+      {% include 'components/metric_card.html' with label='Due' value=invoice.due_date|date:"d M Y" hint='Payment due date' %}
+    </div>
+
+    <div class="split-grid">
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Invoice lines</h2>
+            <p class="panel__subtitle">Rent, lease charges and unbilled meter readings.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Description</th><th class="is-numeric">Qty</th><th class="is-numeric">Unit price</th><th class="is-numeric">Amount</th>{% if has_vat %}<th class="is-numeric">VAT</th>{% endif %}</tr></thead>
+            <tbody>
+              {% for line in lines %}
+                <tr>
+                  <td>{{ line.description }}{% if line.charge_type %} <span class="badge badge--plain">{{ line.charge_type.name }}</span>{% endif %}</td>
+                  <td class="is-numeric">{{ line.quantity|floatformat:2 }}</td>
+                  <td class="is-numeric">{{ line.unit_price|money:app_settings.currency }}</td>
+                  <td class="is-numeric">{{ line.amount|money:app_settings.currency }}</td>
+                  {% if has_vat %}<td class="is-numeric">{{ line.vat_amount|money:app_settings.currency }}</td>{% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="row row--between mt-md">
+          <span class="text-faint">
+            {% if has_vat %}VAT rate snapshot: {{ invoice.vat_rate_snapshot|percentage }} &middot; VAT switch at issue: {{ invoice.vat_enabled_snapshot|yesno:"On,Off" }}{% else %}No VAT on this invoice.{% endif %}
+          </span>
+          <div class="definition-list">
+            <dt>Subtotal</dt><dd class="numeric">{{ invoice.subtotal|money:app_settings.currency }}</dd>
+            {% if has_vat %}<dt>VAT</dt><dd class="numeric">{{ invoice.vat_amount|money:app_settings.currency }}</dd>{% endif %}
+            <dt><strong>Total</strong></dt><dd class="numeric"><strong>{{ invoice.total|money:app_settings.currency }}</strong></dd>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <h2 class="panel__title">Details</h2>
+          </div>
+        </div>
+        <dl class="definition-list">
+          <dt>Invoice</dt><dd>{{ invoice.invoice_number }}</dd>
+          <dt>Tenant</dt><dd><a href="{% url 'tenant_detail' invoice.tenant.pk %}">{{ invoice.tenant.business_name }}</a></dd>
+          <dt>Unit</dt><dd>{{ invoice.unit.code }} &middot; {{ invoice.unit.building.name }}, {{ invoice.unit.floor.name }}</dd>
+          <dt>Lease</dt><dd><a href="{% url 'lease_detail' invoice.lease.pk %}">{{ invoice.lease.start_date|date:"d M Y" }} to {{ invoice.lease.end_date|date:"d M Y" }}</a></dd>
+          <dt>Period</dt><dd>{{ invoice.period_start|date:"d M Y" }} to {{ invoice.period_end|date:"d M Y" }}</dd>
+          <dt>Issued</dt><dd>{{ invoice.issue_date|date:"d M Y" }}</dd>
+          <dt>Due</dt><dd>{{ invoice.due_date|date:"d M Y" }}</dd>
+          <dt>Status</dt><dd>{% include 'components/badge.html' with label=invoice.get_status_display tone=invoice.status|status_tone %}</dd>
+        </dl>
+        {% if invoice.is_void and invoice.void_reason %}
+          <p class="text-danger mt-md">{{ invoice.void_reason }}</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+{% endblock %}

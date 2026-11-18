@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Charge types &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'billing' %}">&larr; Billing</a></p>
+      <h1 class="page-title">Charge types</h1>
+      <p class="page-subtitle">Reusable service, utility or other charges that attach to a lease.</p>
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">All charge types</h2>
+          <p class="panel__subtitle">VAT applies to service/other lines when the type is marked vatable.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Kind</th><th>VAT</th><th>Active</th><th></th></tr></thead>
+          <tbody>
+            {% for charge_type in charge_types %}
+              <tr>
+                <td>{{ charge_type.name }}</td>
+                <td>{{ charge_type.get_kind_display }}</td>
+                <td>{{ charge_type.vat_applicable|yesno:"Yes,No" }}</td>
+                <td>{{ charge_type.is_active|yesno:"Yes,No" }}</td>
+                <td class="is-numeric">
+                  <div class="table-actions">
+                    <a class="btn btn--sm" href="{% url 'charge_type_edit' charge_type.pk %}">Edit</a>
+                    <form method="post" action="{% url 'charge_type_toggle' charge_type.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn--sm">{% if charge_type.is_active %}Disable{% else %}Enable{% endif %}</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="5">No charge types yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Add a charge type</h2>
+        </div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include 'components/form_fields.html' with form=form %}
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">Add charge type</button>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

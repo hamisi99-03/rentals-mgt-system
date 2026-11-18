@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Billing &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Billing</h1>
+      <p class="page-subtitle">Generate monthly invoices. Running the same period twice never duplicates an invoice.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'invoices' %}">Invoices</a>
+      <a class="btn" href="{% url 'charge_types' %}">Charge types</a>
+      <a class="btn" href="{% url 'utility_types' %}">Utilities</a>
+      <a class="btn" href="{% url 'meter_readings' %}">Meter readings</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Generate invoices</h2>
+          <p class="panel__subtitle">Choose the month and due date, then preview before generating.</p>
+        </div>
+      </div>
+      <form method="get" class="form-inline">
+        <div class="form-field">
+          {% include 'components/field.html' with field=form.period %}
+        </div>
+        <div class="form-field">
+          {% include 'components/field.html' with field=form.due_date %}
+        </div>
+        <button type="submit" class="btn">Preview</button>
+        <a class="btn btn--ghost" href="{% url 'billing' %}">This month</a>
+        {% if invoice_count and period_start %}
+          <a class="btn" href="{% url 'invoice_period_pdf' %}?period={{ period_start|date:'Y-m' }}" target="_blank" rel="noopener">Print all PDF</a>
+        {% endif %}
+      </form>
+    </section>
+
+    {% if period_start %}
+      <div class="metric-grid">
+        {% include 'components/metric_card.html' with label='To invoice' value=rows|length hint='Selected leases ready' %}
+        {% include 'components/metric_card.html' with label='Already invoiced' value=skipped hint='Skipped this run' %}
+        {% include 'components/metric_card.html' with label='Invoices this period' value=invoice_count hint='Created so far' %}
+        {% include 'components/metric_card.html' with label='Projected total' value=projected_total|money:app_settings.currency hint='Includes VAT where applicable' %}
+      </div>
+
+      {% if rows %}
+        <form method="post" action="{% url 'billing_generate' %}">
+          {% csrf_token %}
+          <input type="hidden" name="period" value="{{ period_start|date:'Y-m' }}">
+          <input type="hidden" name="due_date" value="{{ due_date|date:'Y-m-d' }}">
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width:32px"></th>
+                  <th>Unit</th>
+                  <th>Tenant</th>
+                  <th class="is-numeric">Rent</th>
+                  <th class="is-numeric">Other</th>
+                  <th class="is-numeric">Total</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                  <tr>
+                    <td><input class="checkbox" type="checkbox" name="lease_ids" value="{{ row.lease.pk }}" checked aria-label="Invoice {{ row.lease.unit.code }}"></td>
+                    <td><a class="table-link" href="{% url 'unit_detail' row.lease.unit.pk %}">{{ row.lease.unit.code }}</a></td>
+                    <td><a class="table-link" href="{% url 'tenant_detail' row.lease.tenant.pk %}">{{ row.lease.tenant.business_name }}</a></td>
+                    <td class="is-numeric">{{ row.rent_amount|money:app_settings.currency }}</td>
+                    <td class="is-numeric">{{ row.other_amount|money:app_settings.currency }}</td>
+                    <td class="is-numeric">{{ row.total|money:app_settings.currency }}</td>
+                    <td>
+                      {% if row.escalations %}
+                        <span class="badge badge--warn">Rent increase applied</span>
+                      {% else %}
+                        <span class="text-faint">-</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="row row--between mt-md">
+            <p class="text-faint mb-0">Period {{ period_start|date:"d M Y" }} to {{ period_end|date:"d M Y" }} &middot; due {{ due_date|date:"d M Y" }}. VAT is snapshotted when each invoice is generated.</p>
+            <div class="row">
+              <a class="btn" href="{% url 'invoices' %}">Cancel</a>
+              <button type="submit" class="btn btn--primary">Generate {{ rows|length }} invoice{{ rows|length|pluralize }}</button>
+            </div>
+          </div>
+        </form>
+      {% else %}
+        {% include 'components/empty_state.html' with icon='billing' title='Nothing left to invoice' text='Every eligible lease already has an invoice for this period. Open the invoices list to review or print them.' %}
+      {% endif %}
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Invoices &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Invoices</h1>
+      <p class="page-subtitle">Issued invoices by period and tenant. Voiding arrives with the payments phase.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'billing' %}">Generate invoices</a>
+      {% if period_value %}
+        <a class="btn" href="{% url 'invoice_period_pdf' %}?period={{ period_value }}" target="_blank" rel="noopener">Print all PDF</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="metric-grid">
+      {% include 'components/metric_card.html' with label='Invoices' value=counts.total hint='Matching filters' %}
+      {% include 'components/metric_card.html' with label='Value' value=counts.value|money:app_settings.currency hint='Invoice totals' %}
+      {% include 'components/metric_card.html' with label='Period' value=period_value|default:'All' hint='YYYY-MM filter' %}
+    </div>
+
+    <section class="panel">
+      <form method="get" class="row">
+        <div class="form-field" style="min-width:240px">
+          <label class="sr-only" for="invoice-search">Search invoices</label>
+          <input class="input" id="invoice-search" type="search" name="q" value="{{ query }}" placeholder="Invoice number, tenant or unit...">
+        </div>
+        <div class="form-field">
+          <label class="sr-only" for="invoice-period">Period</label>
+          <input class="input" id="invoice-period" type="month" name="period" value="{{ period_value }}">
+        </div>
+        <div class="form-field">
+          <label class="sr-only" for="invoice-status">Status</label>
+          <select class="select" id="invoice-status" name="status">
+            <option value="">All statuses</option>
+            {% for value, label in statuses %}
+              <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">Filter</button>
+        <a class="btn btn--ghost" href="{% url 'invoices' %}">Clear</a>
+      </form>
+    </section>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Invoice</th><th>Tenant</th><th>Unit</th><th>Period</th><th>Due</th><th class="is-numeric">Total</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for invoice in invoices %}
+            <tr>
+              <td><a class="table-link" href="{% url 'invoice_detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td>
+              <td>{{ invoice.tenant.business_name }}</td>
+              <td>{{ invoice.unit.code }}</td>
+              <td>{{ invoice.period_start|date:"M Y" }}</td>
+              <td class="nowrap">{{ invoice.due_date|date:"d M Y" }}</td>
+              <td class="is-numeric">{{ invoice.total|money:app_settings.currency }}</td>
+              <td>{% include 'components/badge.html' with label=invoice.get_status_display tone=invoice.status|status_tone %}</td>
+              <td class="is-numeric">
+                <div class="table-actions">
+                  <a class="btn btn--sm" href="{% url 'invoice_detail' invoice.pk %}">Open</a>
+                  <a class="btn btn--sm" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">PDF</a>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="8">No invoices match. <a href="{% url 'billing' %}">Generate invoices</a>.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

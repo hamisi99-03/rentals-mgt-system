@@ -74,6 +74,8 @@ STATUS_TONES = {
     "partial": "warn",
     "unpaid": "plain",
     "overdue": "bad",
+    "issued": "accent",
+    "void": "bad",
 }
 
 

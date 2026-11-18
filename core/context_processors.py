@@ -38,6 +38,17 @@ def app_context(request):
     if active_nav is None:
         if url_name in SETTINGS_SUBPAGES:
             active_nav = "settings"
+        elif url_name.startswith(
+            (
+                "billing",
+                "invoice",
+                "charge_type",
+                "lease_charge",
+                "utility_type",
+                "meter_reading",
+            )
+        ):
+            active_nav = "billing"
         elif url_name.startswith(("unit", "building", "floor")):
             active_nav = "units"
         elif url_name.startswith(("tenant", "contact", "lease")):

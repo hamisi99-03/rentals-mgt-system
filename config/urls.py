@@ -6,6 +6,7 @@ from django.views.static import serve
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("property.urls")),
+    path("", include("billing.urls")),
     path("", include("core.urls")),
     # Uploaded logos and documents are served locally; the app is offline-only.
     re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),

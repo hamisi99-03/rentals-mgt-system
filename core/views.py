@@ -31,14 +31,6 @@ def dashboard(request):
 
 
 PLACEHOLDERS = {
-    "billing": {
-        "title": "Billing",
-        "subtitle": "Monthly invoice runs, charges, VAT, proration and numbering.",
-        "icon": "billing",
-        "empty_title": "No invoices yet",
-        "description": "The billing engine generates one invoice per active lease and is safe to run twice. Built in the billing phase.",
-        "phase_note": "Phase 3 adds invoice generation, escalation, VAT, numbering and PDFs.",
-    },
     "payments": {
         "title": "Payments",
         "subtitle": "Receipts, allocations, credit, cheque lifecycle and statement import.",
@@ -84,7 +76,6 @@ def _make_placeholder(key):
     return view
 
 
-billing = _make_placeholder("billing")
 payments = _make_placeholder("payments")
 maintenance = _make_placeholder("maintenance")
 expenses = _make_placeholder("expenses")

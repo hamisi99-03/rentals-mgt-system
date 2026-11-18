@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from core.models import AuditLog, BackupLog, Settings, User
+from core.models import AuditLog, BackupLog, NumberSequence, Settings, User
 
 
 @admin.register(User)
@@ -89,3 +89,10 @@ class BackupLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(NumberSequence)
+class NumberSequenceAdmin(admin.ModelAdmin):
+    list_display = ("doc_type", "unit", "last_value")
+    list_filter = ("doc_type",)
+    readonly_fields = ("last_value",)

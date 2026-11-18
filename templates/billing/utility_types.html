@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Utilities &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'billing' %}">&larr; Billing</a></p>
+      <h1 class="page-title">Utility types</h1>
+      <p class="page-subtitle">Water, electricity, garbage and their per-unit rates.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'meter_readings' %}">Meter readings</a>
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">All utilities</h2>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Measure</th><th class="is-numeric">Rate per unit</th><th>Active</th><th></th></tr></thead>
+          <tbody>
+            {% for utility in utility_types %}
+              <tr>
+                <td>{{ utility.name }}</td>
+                <td>{{ utility.measure }}</td>
+                <td class="is-numeric">{{ utility.rate_per_unit|money:app_settings.currency }}</td>
+                <td>{{ utility.is_active|yesno:"Yes,No" }}</td>
+                <td class="is-numeric">
+                  <div class="table-actions">
+                    <a class="btn btn--sm" href="{% url 'utility_type_edit' utility.pk %}">Edit</a>
+                    <form method="post" action="{% url 'utility_type_toggle' utility.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn--sm">{% if utility.is_active %}Disable{% else %}Enable{% endif %}</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="5">No utility types yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Add a utility</h2>
+        </div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include 'components/form_fields.html' with form=form %}
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">Add utility</button>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

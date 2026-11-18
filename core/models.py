@@ -245,3 +245,27 @@ class BackupLog(models.Model):
 
     def __str__(self):
         return f"{self.result} {self.destination_path}".strip()
+
+
+class NumberSequence(TimeStampedModel):
+    """Per document type and unit counter. Incremented inside a transaction."""
+
+    DOC_INVOICE = "invoice"
+    DOC_RECEIPT = "receipt"
+    DOC_TYPE_CHOICES = [
+        (DOC_INVOICE, "Invoice"),
+        (DOC_RECEIPT, "Receipt"),
+    ]
+
+    doc_type = models.CharField(max_length=20, choices=DOC_TYPE_CHOICES)
+    unit = models.ForeignKey(
+        "property.Unit", on_delete=models.PROTECT, related_name="number_sequences"
+    )
+    last_value = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = [("doc_type", "unit")]
+        ordering = ["doc_type", "unit__code"]
+
+    def __str__(self):
+        return f"{self.doc_type} {self.unit.code}: {self.last_value}"

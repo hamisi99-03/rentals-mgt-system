@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Lease charges &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'lease_detail' lease.pk %}">&larr; Lease {{ lease.unit.code }}</a></p>
+      <h1 class="page-title">Lease charges</h1>
+      <p class="page-subtitle">{{ lease.tenant.business_name }} &middot; Unit {{ lease.unit.code }}. Monthly charges prorate; quarterly and once charges bill in full.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="{% url 'charge_types' %}">Manage charge types</a>
+    </div>
+  </div>
+
+  <div class="split-grid">
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Charges on this lease</h2>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Type</th><th>Kind</th><th class="is-numeric">Amount</th><th>Frequency</th><th>From</th><th>To</th><th>Active</th><th></th></tr></thead>
+          <tbody>
+            {% for charge in charges %}
+              <tr>
+                <td>{{ charge.charge_type.name }}</td>
+                <td>{{ charge.charge_type.get_kind_display }}</td>
+                <td class="is-numeric">{{ charge.amount|money:app_settings.currency }}</td>
+                <td>{{ charge.get_frequency_display }}</td>
+                <td>{{ charge.start_date|date:"d M Y" }}</td>
+                <td>{{ charge.end_date|date:"d M Y"|default:"-" }}</td>
+                <td>{{ charge.is_active|yesno:"Yes,No" }}</td>
+                <td class="is-numeric">
+                  <div class="table-actions">
+                    <a class="btn btn--sm" href="{% url 'lease_charge_edit' charge.pk %}">Edit</a>
+                    <form method="post" action="{% url 'lease_charge_toggle' charge.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn--sm">{% if charge.is_active %}Disable{% else %}Enable{% endif %}</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="8">No charges on this lease. Rent is billed from the lease itself.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <h2 class="panel__title">Add a charge</h2>
+        </div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include 'components/form_fields.html' with form=form %}
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">Add charge</button>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}
