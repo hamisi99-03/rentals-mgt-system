@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Arrears report &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'reports' %}">&larr; Reports</a></p>
+      <h1 class="page-title">Arrears</h1>
+      <p class="page-subtitle">Overdue invoice balances as of a chosen date.</p>
+    </div>
+    <div class="page-actions report-actions">
+      <a class="btn" href="{% querystring export='xlsx' %}">Excel</a>
+      <a class="btn" href="{% querystring export='pdf' %}" target="_blank" rel="noopener">PDF</a>
+      <a class="btn" href="{% url 'overdue_reminders' %}">Reminder list</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <form method="get" class="form-inline">
+        <div class="form-field">{% include 'components/field.html' with field=form.as_of %}</div>
+        <button type="submit" class="btn">Apply</button>
+      </form>
+    </section>
+
+    <div class="metric-grid">
+      <div class="metric-card"><div class="metric-card__label">0-30 days</div><div class="metric-card__value">{{ buckets|get_item:'0-30'|money:app_settings.currency }}</div></div>
+      <div class="metric-card"><div class="metric-card__label">31-60 days</div><div class="metric-card__value">{{ buckets|get_item:'31-60'|money:app_settings.currency }}</div></div>
+      <div class="metric-card"><div class="metric-card__label">61-90 days</div><div class="metric-card__value">{{ buckets|get_item:'61-90'|money:app_settings.currency }}</div></div>
+      <div class="metric-card"><div class="metric-card__label">90+ days</div><div class="metric-card__value">{{ buckets|get_item:'90+'|money:app_settings.currency }}</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Invoice</th><th>Tenant</th><th>Unit</th><th>Due</th><th class="is-numeric">Days</th><th>Bucket</th><th class="is-numeric">Total</th><th class="is-numeric">Paid</th><th class="is-numeric">Balance</th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td><a class="table-link" href="{% url 'invoice_detail' row.invoice.pk %}">{{ row.invoice.invoice_number }}</a></td>
+              <td>{{ row.tenant.business_name }}</td>
+              <td>{{ row.unit.code }}</td>
+              <td class="nowrap">{{ row.due_date|date:"d M Y" }}</td>
+              <td class="is-numeric">{{ row.days }}</td>
+              <td>{{ row.bucket }}</td>
+              <td class="is-numeric">{{ row.total|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ row.paid|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ row.balance|money:app_settings.currency }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="9">No overdue invoices for this date.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

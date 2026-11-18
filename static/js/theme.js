@@ -27,6 +27,7 @@
     root.dataset.palette = theme.palette;
     root.dataset.density = theme.density;
     root.dataset.textSize = theme.textSize;
+    document.dispatchEvent(new CustomEvent("themechange", { detail: theme }));
   }
 
   function parseHex(hex) {
@@ -133,6 +134,7 @@
   darkQuery.addEventListener("change", function () {
     if (readTheme().mode === "system") {
       root.dataset.mode = resolveMode("system");
+      document.dispatchEvent(new CustomEvent("themechange", { detail: readTheme() }));
     }
   });
 

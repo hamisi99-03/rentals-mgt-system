@@ -9,6 +9,7 @@ urlpatterns = [
     path("", include("billing.urls")),
     path("", include("payments.urls")),
     path("", include("operations.urls")),
+    path("", include("reports.urls")),
     path("", include("core.urls")),
     # Uploaded logos and documents are served locally; the app is offline-only.
     re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),

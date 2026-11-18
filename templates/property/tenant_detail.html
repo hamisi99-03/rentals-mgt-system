@@ -191,6 +191,7 @@
             <p class="panel__subtitle">Invoices and receipts in date order with a running balance.</p>
           </div>
           <div class="row">
+            <a class="btn btn--sm" href="{% url 'report_statement' %}?tenant={{ tenant.pk }}">Full statement</a>
             <a class="btn btn--sm" href="{% url 'payment_new' %}?tenant={{ tenant.pk }}">Record payment</a>
           </div>
         </div>

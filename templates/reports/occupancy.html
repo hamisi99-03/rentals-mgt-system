@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Occupancy &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'reports' %}">&larr; Reports</a></p>
+      <h1 class="page-title">Occupancy &amp; vacancy</h1>
+      <p class="page-subtitle">Current unit status and tenants.</p>
+    </div>
+    <div class="page-actions report-actions">
+      <a class="btn" href="{% querystring export='xlsx' %}">Excel</a>
+      <a class="btn" href="{% querystring export='pdf' %}" target="_blank" rel="noopener">PDF</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <form method="get" class="form-inline">
+        <div class="form-field">{% include 'components/field.html' with field=form.building %}</div>
+        <button type="submit" class="btn">Apply</button>
+      </form>
+    </section>
+
+    <div class="metric-grid">
+      <div class="metric-card"><div class="metric-card__label">Occupied</div><div class="metric-card__value">{{ counts.occupied|default:0 }}</div></div>
+      <div class="metric-card"><div class="metric-card__label">Vacant</div><div class="metric-card__value">{{ counts.vacant|default:0 }}</div></div>
+      <div class="metric-card"><div class="metric-card__label">Reserved</div><div class="metric-card__value">{{ counts.reserved|default:0 }}</div></div>
+      <div class="metric-card"><div class="metric-card__label">Occupancy rate</div><div class="metric-card__value">{{ rate|percentage }}</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Unit</th><th>Building</th><th>Floor</th><th>Status</th><th>Tenant</th><th>Lease end</th><th class="is-numeric">Base rent</th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td><a class="table-link" href="{% url 'unit_detail' row.unit.pk %}">{{ row.unit.code }}</a></td>
+              <td>{{ row.unit.building.name }}</td>
+              <td>{{ row.unit.floor.name }}</td>
+              <td>{{ row.status }}</td>
+              <td>{{ row.tenant }}</td>
+              <td class="nowrap">{% if row.lease_end %}{{ row.lease_end|date:"d M Y" }}{% else %}-{% endif %}</td>
+              <td class="is-numeric">{{ row.rent|money:app_settings.currency }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="7">No active units.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

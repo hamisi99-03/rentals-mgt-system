@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Overdue reminders &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'reports' %}">&larr; Reports</a></p>
+      <h1 class="page-title">Overdue reminders</h1>
+      <p class="page-subtitle">Tenants with overdue balances, ready to call or message.</p>
+    </div>
+    <div class="page-actions report-actions">
+      <a class="btn" href="{% querystring export='xlsx' %}">Excel</a>
+      <a class="btn" href="{% querystring export='pdf' %}" target="_blank" rel="noopener">PDF</a>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Tenant</th><th>Unit</th><th>Invoice</th><th class="is-numeric">Days overdue</th><th class="is-numeric">Balance</th><th>Phone</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td><a class="table-link" href="{% url 'tenant_detail' row.tenant.pk %}">{{ row.tenant.business_name }}</a></td>
+            <td>{{ row.unit.code }}</td>
+            <td><a class="table-link" href="{% url 'invoice_detail' row.invoice.pk %}">{{ row.invoice.invoice_number }}</a></td>
+            <td class="is-numeric">{{ row.days }}</td>
+            <td class="is-numeric">{{ row.balance|money:app_settings.currency }}</td>
+            <td>{{ row.phone|default:"-" }}</td>
+            <td>
+              {% if row.phone %}
+                <div class="table-actions">
+                  {% if row.whatsapp_url %}
+                    <a class="btn btn--sm" href="{{ row.whatsapp_url }}" target="_blank" rel="noopener" title="{{ row.message }}">WhatsApp</a>
+                  {% endif %}
+                  <a class="btn btn--sm" href="{{ row.call_url }}">Call</a>
+                </div>
+              {% else %}
+                <span class="text-faint">No phone</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td class="table-empty" colspan="7">No overdue tenants.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

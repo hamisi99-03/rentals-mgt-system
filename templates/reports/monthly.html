@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Monthly income &amp; expenses &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'reports' %}">&larr; Reports</a></p>
+      <h1 class="page-title">Income &amp; expenses</h1>
+      <p class="page-subtitle">Collected payments and expenses by month.</p>
+    </div>
+    <div class="page-actions report-actions">
+      <a class="btn" href="{% querystring export='xlsx' %}">Excel</a>
+      <a class="btn" href="{% querystring export='pdf' %}" target="_blank" rel="noopener">PDF</a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <form method="get" class="form-inline">
+        <div class="form-field">{% include 'components/field.html' with field=form.start_date %}</div>
+        <div class="form-field">{% include 'components/field.html' with field=form.end_date %}</div>
+        <button type="submit" class="btn">Apply</button>
+      </form>
+    </section>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Month</th><th class="is-numeric">Billed</th><th class="is-numeric">Collected</th><th class="is-numeric">Expenses</th><th class="is-numeric">Net</th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>{{ row.month }}</td>
+              <td class="is-numeric">{{ row.billed|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ row.collected|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ row.expenses|money:app_settings.currency }}</td>
+              <td class="is-numeric">{{ row.net|money:app_settings.currency }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="table-empty" colspan="5">No data for this range.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

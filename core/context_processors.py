@@ -55,6 +55,8 @@ def app_context(request):
             active_nav = "maintenance"
         elif url_name.startswith(("expense",)):
             active_nav = "expenses"
+        elif url_name.startswith(("report", "overdue")):
+            active_nav = "reports"
         elif url_name.startswith(("prospect", "vacanc")):
             active_nav = "units"
         elif url_name.startswith(("move_out", "deposit")):

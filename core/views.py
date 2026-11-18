@@ -13,6 +13,8 @@ from core.backup import default_backup_folder, perform_backup
 from core.forms import AppearanceForm, SettingsForm, StyledAuthenticationForm
 from core.models import AuditLog, BackupLog, Settings
 from core.permissions import role_required
+from property.services import refresh_lease_statuses
+from reports.services import dashboard_summary
 
 
 class AppLoginView(LoginView):
@@ -27,32 +29,12 @@ class AppLogoutView(LogoutView):
 
 @role_required
 def dashboard(request):
-    return render(request, "core/dashboard.html")
-
-
-PLACEHOLDERS = {
-    "reports": {
-        "title": "Reports",
-        "subtitle": "Arrears, income and expenses, occupancy, statements and tax.",
-        "icon": "reports",
-        "empty_title": "No reports yet",
-        "description": "Reports reconcile with the ledger and export to Excel and PDF. Built after the ledger exists.",
-        "phase_note": "Phase 6 adds the reports hub, exports and the overdue reminder list.",
-    },
-}
-
-
-def _make_placeholder(key):
-    details = PLACEHOLDERS[key]
-
-    @role_required
-    def view(request):
-        return render(request, "core/placeholder.html", details)
-
-    return view
-
-
-reports = _make_placeholder("reports")
+    refresh_lease_statuses()
+    return render(
+        request,
+        "core/dashboard.html",
+        {"summary": dashboard_summary()},
+    )
 
 
 @role_required

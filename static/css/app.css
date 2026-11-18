@@ -1379,3 +1379,28 @@ dialog::backdrop {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ---------------- Charts and reports ---------------- */
+
+.chart-box {
+  position: relative;
+  height: 290px;
+  min-width: 0;
+}
+
+.chart-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.report-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.reminder-message {
+  max-width: 44ch;
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+}

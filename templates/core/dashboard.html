@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static core_extras %}
 
 {% block title %}Dashboard &middot; {{ app_settings.company_name }}{% endblock %}
 
@@ -17,10 +18,10 @@
 
   <div class="stack">
     <div class="metric-grid">
-      {% include 'components/metric_card.html' with label='Rent due' value='0' hint='No billing runs yet' %}
-      {% include 'components/metric_card.html' with label='Collected' value='0' hint='This month' %}
-      {% include 'components/metric_card.html' with label='Arrears' value='0' hint='Nothing overdue' %}
-      {% include 'components/metric_card.html' with label='Occupied' value='0 / 0' hint='No units imported yet' %}
+      {% include 'components/metric_card.html' with label='Rent due' value=summary.rent_due|money:app_settings.currency hint='Billed this month' %}
+      {% include 'components/metric_card.html' with label='Collected' value=summary.collected|money:app_settings.currency hint='Payments this month' %}
+      {% include 'components/metric_card.html' with label='Arrears' value=summary.arrears|money:app_settings.currency hint='Overdue balances' %}
+      {% include 'components/metric_card.html' with label='Occupied' value=summary.occupied_label hint='Active units' %}
     </div>
 
     <div class="split-grid">
@@ -28,24 +29,23 @@
         <div class="panel__header">
           <div>
             <h2 class="panel__title">Income vs expenses</h2>
-            <p class="panel__subtitle">Last 6 months</p>
+            <p class="panel__subtitle">Last 6 months, collected cash and withholding against expenses.</p>
           </div>
         </div>
-        {% include 'components/empty_state.html' with icon='reports' title='No chart data yet' text='Income and expense charts appear once invoices and payments exist.' %}
+        <div class="chart-box">
+          <canvas id="income-expense-chart" role="img" aria-label="Income versus expenses over the last 6 months"></canvas>
+        </div>
       </section>
 
       <section class="panel">
         <div class="panel__header">
           <div>
             <h2 class="panel__title">Arrears by age</h2>
-            <p class="panel__subtitle">Days past due</p>
+            <p class="panel__subtitle">Overdue invoice balances by days past due.</p>
           </div>
         </div>
-        <div class="stack">
-          <div class="row row--between"><span class="text-muted">0&ndash;30 days</span><span class="numeric">0.00</span></div>
-          <div class="row row--between"><span class="text-muted">31&ndash;60 days</span><span class="numeric">0.00</span></div>
-          <div class="row row--between"><span class="text-muted">61&ndash;90 days</span><span class="numeric">0.00</span></div>
-          <div class="row row--between"><span class="text-muted">90+ days</span><span class="numeric">0.00</span></div>
+        <div class="chart-box">
+          <canvas id="arrears-chart" role="img" aria-label="Arrears by age bucket"></canvas>
         </div>
       </section>
     </div>
@@ -54,7 +54,7 @@
       <div class="panel__header">
         <div>
           <h2 class="panel__title">Needs attention</h2>
-          <p class="panel__subtitle">Operational follow-ups for the building</p>
+          <p class="panel__subtitle">Operational follow-ups for the building.</p>
         </div>
       </div>
       <div class="table-wrap">
@@ -62,27 +62,35 @@
           <tbody>
             <tr>
               <td>Overdue tenants</td>
-              <td class="is-numeric">0</td>
-              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'payments' %}">View list</a></td>
+              <td class="is-numeric">{{ summary.overdue_tenants }}</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'overdue_reminders' %}">View list</a></td>
             </tr>
             <tr>
-              <td>Leases ending in 60 days</td>
-              <td class="is-numeric">0</td>
-              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'tenants' %}">View list</a></td>
+              <td>Leases ending in {{ summary.renewal_days }} days</td>
+              <td class="is-numeric">{{ summary.leases_ending }}</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'leases' %}">View list</a></td>
             </tr>
             <tr>
               <td>Rent increases due this month</td>
-              <td class="is-numeric">0</td>
-              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'billing' %}">View list</a></td>
+              <td class="is-numeric">{{ summary.rent_increases }}</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'leases' %}">View list</a></td>
             </tr>
             <tr>
               <td>Open maintenance requests</td>
-              <td class="is-numeric">0</td>
-              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'maintenance' %}">View list</a></td>
+              <td class="is-numeric">{{ summary.open_maintenance }}</td>
+              <td class="is-numeric"><a class="btn btn--sm" href="{% url 'maintenance' %}?status=open">View list</a></td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
   </div>
+
+  {{ summary.months|json_script:"income-expense-data" }}
+  {{ summary.buckets|json_script:"arrears-data" }}
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+  <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

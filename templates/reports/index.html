@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reports</h1>
+      <p class="page-subtitle">Ledger reports with Excel and PDF exports.</p>
+    </div>
+  </div>
+
+  <div class="metric-grid">
+    <a class="metric-card" href="{% url 'report_arrears' %}" style="text-decoration:none">
+      <div class="metric-card__label">Arrears</div>
+      <div class="metric-card__hint mt-sm">Overdue invoices, ageing and balances.</div>
+    </a>
+    <a class="metric-card" href="{% url 'report_monthly' %}" style="text-decoration:none">
+      <div class="metric-card__label">Income &amp; expenses</div>
+      <div class="metric-card__hint mt-sm">Collected cash and expenses by month.</div>
+    </a>
+    <a class="metric-card" href="{% url 'report_occupancy' %}" style="text-decoration:none">
+      <div class="metric-card__label">Occupancy</div>
+      <div class="metric-card__hint mt-sm">Occupied, vacant and reserved units.</div>
+    </a>
+    <a class="metric-card" href="{% url 'report_statement' %}" style="text-decoration:none">
+      <div class="metric-card__label">Tenant statement</div>
+      <div class="metric-card__hint mt-sm">Charges, payments and running balance.</div>
+    </a>
+    <a class="metric-card" href="{% url 'report_tax' %}" style="text-decoration:none">
+      <div class="metric-card__label">Tax summary</div>
+      <div class="metric-card__hint mt-sm">Rent billed, VAT and withholding.</div>
+    </a>
+    <a class="metric-card" href="{% url 'overdue_reminders' %}" style="text-decoration:none">
+      <div class="metric-card__label">Overdue reminders</div>
+      <div class="metric-card__hint mt-sm">Call and WhatsApp follow-up list.</div>
+    </a>
+  </div>
+{% endblock %}

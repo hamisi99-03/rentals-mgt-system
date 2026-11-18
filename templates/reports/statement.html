@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load core_extras %}
+
+{% block title %}Tenant statement &middot; {{ app_settings.company_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-faint mb-0"><a href="{% url 'reports' %}">&larr; Reports</a></p>
+      <h1 class="page-title">Tenant statement</h1>
+      <p class="page-subtitle">Invoices and receipts with a running balance.</p>
+    </div>
+    {% if statement %}
+      <div class="page-actions report-actions">
+        <a class="btn" href="{% querystring export='xlsx' %}">Excel</a>
+        <a class="btn" href="{% querystring export='pdf' %}" target="_blank" rel="noopener">PDF</a>
+        {% if form.cleaned_data.tenant %}
+          <a class="btn" href="{% url 'tenant_detail' form.cleaned_data.tenant.pk %}">Open tenant</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <form method="get" class="form-inline">
+        <div class="form-field" style="min-width:240px">{% include 'components/field.html' with field=form.tenant %}</div>
+        <div class="form-field">{% include 'components/field.html' with field=form.start_date %}</div>
+        <div class="form-field">{% include 'components/field.html' with field=form.end_date %}</div>
+        <button type="submit" class="btn">Apply</button>
+      </form>
+    </section>
+
+    {% if statement %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Description</th><th class="is-numeric">Charged</th><th class="is-numeric">Paid</th><th class="is-numeric">Balance</th></tr></thead>
+          <tbody>
+            <tr>
+              <td></td>
+              <td class="text-muted">Opening balance</td>
+              <td class="is-numeric"></td>
+              <td class="is-numeric"></td>
+              <td class="is-numeric">{{ statement.opening|money:app_settings.currency }}</td>
+            </tr>
+            {% for row in statement.rows %}
+              <tr>
+                <td class="nowrap">{{ row.date|date:"d M Y" }}</td>
+                <td>
+                  {% if row.invoice %}<a class="table-link" href="{% url 'invoice_detail' row.invoice.pk %}">{{ row.description }}</a>
+                  {% elif row.payment %}<a class="table-link" href="{% url 'payment_detail' row.payment.pk %}">{{ row.description }}</a>
+                  {% else %}{{ row.description }}{% endif %}
+                </td>
+                <td class="is-numeric">{% if row.charged %}{{ row.charged|money:app_settings.currency }}{% endif %}</td>
+                <td class="is-numeric">{% if row.paid %}{{ row.paid|money:app_settings.currency }}{% endif %}</td>
+                <td class="is-numeric">{{ row.balance|money:app_settings.currency }}</td>
+              </tr>
+            {% empty %}
+              <tr><td class="table-empty" colspan="5">No entries in this range.</td></tr>
+            {% endfor %}
+            <tr>
+              <td></td>
+              <td class="text-muted"><strong>Closing balance</strong></td>
+              <td class="is-numeric"></td>
+              <td class="is-numeric"></td>
+              <td class="is-numeric"><strong>{{ statement.closing|money:app_settings.currency }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      {% include 'components/empty_state.html' with icon='reports' title='Choose a tenant' text='Select a tenant and date range to build the statement.' %}
+    {% endif %}
+  </div>
+{% endblock %}
