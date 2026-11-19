@@ -319,7 +319,7 @@ def test_full_lifecycle_prospect_to_refund(logged_in, building, floor):
     record_payment(
         tenant,
         today,
-        "cash",
+        "bank",
         Decimal("300.00"),
     )
 
@@ -332,9 +332,10 @@ def test_full_lifecycle_prospect_to_refund(logged_in, building, floor):
         },
     )
     move_out = MoveOut.objects.get(lease=lease)
+    outstanding = invoice.total - Decimal("300.00")
     assert move_out.deposit_held == Decimal("2400.00")
-    assert move_out.arrears_at_exit == Decimal("220.00")
-    assert move_out.refund_amount == Decimal("2180.00")
+    assert move_out.arrears_at_exit == outstanding
+    assert move_out.refund_amount == Decimal("2400.00") - outstanding
 
     logged_in.post(reverse("move_out_settle", kwargs={"pk": move_out.pk}))
     move_out.refresh_from_db()
@@ -344,7 +345,7 @@ def test_full_lifecycle_prospect_to_refund(logged_in, building, floor):
     assert lease.status == Lease.STATUS_TERMINATED
     assert unit.status == Unit.STATUS_VACANT
     assert lease.deposits.get().status == Deposit.STATUS_PARTLY_REFUNDED
-    assert invoice.balance == Decimal("220.00")
+    assert invoice.balance == outstanding
 
 def test_operations_management_pages_render(logged_in, lease, unit, tenant):
     from operations.models import Expense, ExpenseCategory, MaintenanceRequest, Prospect

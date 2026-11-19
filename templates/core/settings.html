@@ -41,8 +41,21 @@
       <section class="panel">
         <div class="panel__header">
           <div>
+            <h2 class="panel__title">Billing defaults</h2>
+            <p class="panel__subtitle">A fixed monthly service charge is added to every new lease. Rent is set per lease and reviewed in the lease's escalation rule.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          {% include 'components/field.html' with field=form.service_charge_amount %}
+        </div>
+        <p class="help-text mt-sm">The service charge covers water, electricity, security and toilet at one flat amount, regardless of how much is used. It is not metered.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
             <h2 class="panel__title">Tax</h2>
-            <p class="panel__subtitle">VAT is off unless the master switch is enabled. Existing invoices are never recalculated.</p>
+            <p class="panel__subtitle">VAT has not been introduced yet. Keep the master switch off; existing invoices are never recalculated.</p>
           </div>
         </div>
         <div class="form-grid">

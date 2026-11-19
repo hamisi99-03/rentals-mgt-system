@@ -22,6 +22,8 @@ from property.models import (
     Unit,
 )
 from property.services import (
+    DEFAULT_ESCALATION_INTERVAL_MONTHS,
+    ensure_service_charge,
     record_initial_rent,
     refresh_unit_statuses,
     validate_lease_fields,
@@ -447,6 +449,13 @@ def parse_workbook(upload) -> ImportPreview:
             next_date = _date(
                 values["next_escalation_date"], "next_escalation_date", required=False
             )
+            if escalation_type != Lease.ESCALATION_NONE:
+                if interval is None:
+                    interval = DEFAULT_ESCALATION_INTERVAL_MONTHS
+                if next_date is None:
+                    from billing.services import add_months
+
+                    next_date = add_months(start, DEFAULT_ESCALATION_INTERVAL_MONTHS)
             validate_lease_fields(escalation_type, escalation_value, interval, next_date)
             status = _choice(
                 values["status"],
@@ -585,6 +594,7 @@ def commit_import(preview: ImportPreview) -> dict:
             lease.full_clean()
             lease.save()
             record_initial_rent(lease)
+            ensure_service_charge(lease)
 
         refresh_unit_statuses()
 

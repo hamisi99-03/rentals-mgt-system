@@ -26,7 +26,7 @@
         <div class="panel__header">
           <div>
             <h2 class="panel__title">Payment details</h2>
-            <p class="panel__subtitle">Cash received and withholding together settle invoices.</p>
+            <p class="panel__subtitle">Bank deposit received and withholding together settle invoices.</p>
           </div>
         </div>
 
@@ -51,8 +51,6 @@
           </div>
           {% include 'components/field.html' with field=form.withholding_amount %}
           {% include 'components/field.html' with field=form.withholding_cert_no %}
-          {% include 'components/field.html' with field=form.cheque_number %}
-          {% include 'components/field.html' with field=form.cheque_bank %}
           {% include 'components/field.html' with field=form.notes %}
         </div>
       </section>

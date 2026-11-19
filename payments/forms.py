@@ -16,7 +16,12 @@ class PaymentForm(forms.Form):
         initial=timezone.localdate,
         widget=forms.DateInput(attrs={"type": "date"}),
     )
-    method = forms.ChoiceField(choices=Payment.METHOD_CHOICES, initial=Payment.METHOD_MPESA)
+    method = forms.ChoiceField(
+        choices=Payment.ENTRY_METHOD_CHOICES,
+        initial=Payment.METHOD_BANK,
+        label="Method",
+        help_text="Rent is recognised only when the money is deposited in the bank account.",
+    )
     amount = forms.DecimalField(
         max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False
     )
@@ -61,9 +66,12 @@ class PaymentForm(forms.Form):
 
 
 class StatementImportForm(forms.Form):
-    source = forms.ChoiceField(choices=StatementImport.SOURCE_CHOICES)
+    source = forms.ChoiceField(
+        choices=[(StatementImport.SOURCE_BANK, "Bank")],
+        initial=StatementImport.SOURCE_BANK,
+    )
     file = forms.FileField(
-        help_text="CSV from M-Pesa or the bank. Unmatched rows are never posted automatically.",
+        help_text="CSV from the bank. Unmatched rows are never posted automatically.",
         widget=forms.ClearableFileInput(attrs={"accept": ".csv,text/csv"}),
     )
 

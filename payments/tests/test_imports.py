@@ -39,11 +39,18 @@ def test_parse_bank_rows():
     assert transactions[1]["amount"] == Decimal("1200.00")
 
 
+def test_statement_import_is_bank_only():
+    from payments.forms import StatementImportForm
+
+    form = StatementImportForm()
+    assert list(dict(form.fields["source"].choices)) == ["bank"]
+
+
 def test_upload_never_posts_payments(logged_in, invoice):
     response = logged_in.post(
         reverse("statement_imports"),
         {
-            "source": "mpesa",
+            "source": "bank",
             "file": SimpleUploadedFile("mpesa.csv", MPESA_CSV.encode(), content_type="text/csv"),
         },
     )
@@ -64,7 +71,7 @@ def test_confirm_suggested_row_records_payment(logged_in, invoice):
     response = logged_in.post(
         reverse("statement_imports"),
         {
-            "source": "mpesa",
+            "source": "bank",
             "file": SimpleUploadedFile("mpesa.csv", MPESA_CSV.encode(), content_type="text/csv"),
         },
     )
@@ -91,7 +98,7 @@ def test_unmatched_row_cannot_confirm_without_tenant(logged_in, invoice):
     logged_in.post(
         reverse("statement_imports"),
         {
-            "source": "mpesa",
+            "source": "bank",
             "file": SimpleUploadedFile("mpesa.csv", MPESA_CSV.encode(), content_type="text/csv"),
         },
     )
@@ -107,7 +114,7 @@ def test_unmatched_row_can_be_picked_and_confirmed(logged_in, invoice, tenant):
     logged_in.post(
         reverse("statement_imports"),
         {
-            "source": "mpesa",
+            "source": "bank",
             "file": SimpleUploadedFile("mpesa.csv", MPESA_CSV.encode(), content_type="text/csv"),
         },
     )

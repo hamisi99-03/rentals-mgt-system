@@ -8,6 +8,8 @@ from django.utils import timezone
 from property.forms import LeaseForm
 from property.models import Lease, LeaseRentHistory, Tenant, TenantContact, Unit
 from property.services import (
+    DEFAULT_ESCALATION_INTERVAL_MONTHS,
+    SERVICE_CHARGE_NAME,
     refresh_lease_statuses,
     refresh_unit_statuses,
     sync_unit_status,
@@ -214,3 +216,75 @@ def test_refresh_unit_statuses_clears_stale_occupied(unit):
     refresh_unit_statuses()
     unit.refresh_from_db()
     assert unit.status == Unit.STATUS_VACANT
+
+def test_new_lease_gets_fixed_flat_service_charge(tenant, unit):
+    today = timezone.localdate()
+    form = LeaseForm(
+        data={
+            "tenant": tenant.pk,
+            "unit": unit.pk,
+            "start_date": today.isoformat(),
+            "end_date": (today + timedelta(days=365)).isoformat(),
+            "monthly_rent": "25000.00",
+            "deposit_amount": "25000.00",
+            "escalation_type": "none",
+            "escalation_value": "0",
+            "status": "active",
+        }
+    )
+    assert form.is_valid(), form.errors
+    lease = form.save()
+    charge = lease.charges.get(charge_type__name=SERVICE_CHARGE_NAME)
+    assert charge.amount == Decimal("500.00")
+    assert charge.frequency == "monthly"
+    assert charge.start_date == lease.start_date
+    assert charge.charge_type.kind == "service"
+    assert charge.charge_type.vat_applicable is False
+
+
+def test_editing_a_lease_does_not_duplicate_the_service_charge(tenant, unit):
+    today = timezone.localdate()
+    data = {
+        "tenant": tenant.pk,
+        "unit": unit.pk,
+        "start_date": today.isoformat(),
+        "end_date": (today + timedelta(days=365)).isoformat(),
+        "monthly_rent": "25000.00",
+        "deposit_amount": "25000.00",
+        "escalation_type": "none",
+        "escalation_value": "0",
+        "status": "active",
+    }
+    form = LeaseForm(data=data)
+    assert form.is_valid(), form.errors
+    lease = form.save()
+    assert lease.charges.filter(charge_type__name=SERVICE_CHARGE_NAME).count() == 1
+
+    data["monthly_rent"] = "27000.00"
+    form = LeaseForm(data=data, instance=lease)
+    assert form.is_valid(), form.errors
+    form.save()
+    assert lease.charges.filter(charge_type__name=SERVICE_CHARGE_NAME).count() == 1
+
+
+def test_lease_form_defaults_rent_review_to_24_months(tenant, unit):
+    from billing.services import add_months
+
+    start = timezone.localdate()
+    form = LeaseForm(
+        data={
+            "tenant": tenant.pk,
+            "unit": unit.pk,
+            "start_date": start.isoformat(),
+            "end_date": (start + timedelta(days=730)).isoformat(),
+            "monthly_rent": "25000.00",
+            "deposit_amount": "25000.00",
+            "escalation_type": "percent",
+            "escalation_value": "5",
+            "status": "active",
+        }
+    )
+    assert form.is_valid(), form.errors
+    lease = form.save()
+    assert lease.escalation_interval_months == DEFAULT_ESCALATION_INTERVAL_MONTHS
+    assert lease.next_escalation_date == add_months(start, 24)

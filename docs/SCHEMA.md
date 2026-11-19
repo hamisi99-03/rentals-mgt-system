@@ -1,7 +1,7 @@
 About 35 tables in SQLite through the Django ORM. Conventions: every table has id, created_at, updated_at and created_by (User). Money is DECIMAL(12,2). Status fields are fixed lists, shown in brackets. Balances, amounts paid and arrears are never stored; they are computed from invoices, allocations and credit entries.
 Core and settings
 • User: username (unique), password_hash, full_name, phone, auto_lock_minutes (default 15), last_login, theme_mode [light, dark, system], theme_palette [ocean, forest, sunset, slate, plum], theme_density [comfortable, compact], theme_text_size [small, medium, large].
-• Settings (one row): company_name, address, phone, email, kra_pin, logo, letterhead_text, currency (KES), vat_enabled (default false), vat_rate (default 16.00), withholding_rate, invoice_prefix (INV), receipt_prefix (RCT), number_separator, number_padding (4), invoice_due_day, renewal_alert_days (60), backup_folder, reminder_template, default_palette, brand_color (optional hex).
+• Settings (one row): company_name, address, phone, email, kra_pin, logo, letterhead_text, currency (KES), service_charge_amount (default 500.00), vat_enabled (default false), vat_rate (default 16.00), withholding_rate, invoice_prefix (INV), receipt_prefix (RCT), number_separator, number_padding (4), invoice_due_day, renewal_alert_days (60), backup_folder, reminder_template, default_palette, brand_color (optional hex).
 • NumberSequence: doc_type [invoice, receipt], unit (FK), last_value. Unique on (doc_type, unit). Incremented inside a database transaction so numbers are never reused.
 • AuditLog (append-only): timestamp, user, action [create, update, delete, void, login, backup, restore], model, object_id, object_repr, changes (JSON before/after).
 • BackupLog: timestamp, destination_path, size_bytes, result [ok, failed], message.
@@ -16,18 +16,18 @@ Tenants and documents
 • TenantContact: tenant (FK), name, role_title, phone, email, is_primary.
 • Document: owner_type and owner_id (generic link to Tenant, Lease, Expense, MaintenanceRequest or MoveOut), doc_type [lease, id_copy, permit, receipt, photo, other], file, uploaded_by, uploaded_at.
 Leases and charges
-• Lease: tenant (FK), unit (FK), start_date, end_date, monthly_rent, deposit_amount, escalation_type [none, percent, fixed], escalation_value, escalation_interval_months, next_escalation_date, status [draft, active, expired, terminated], terminated_on, termination_reason, notes.
+• Lease: tenant (FK), unit (FK), start_date, end_date, monthly_rent, deposit_amount, escalation_type [none, percent, fixed], escalation_value, escalation_interval_months (defaults to 24 when a rule is enabled), next_escalation_date, status [draft, active, expired, terminated], terminated_on, termination_reason, notes.
 • LeaseRentHistory: lease (FK), effective_date, old_rent, new_rent, reason [initial, escalation, manual], changed_by.
-• ChargeType: name, kind [service, utility, other], vat_applicable, is_active. Rent comes from the lease itself.
+• ChargeType: name, kind [service, utility, other], vat_applicable, is_active. Rent comes from the lease itself. A default "Service charge (water, electricity, security, toilet)" type is attached to every new lease at the Settings amount (500.00 by default), as a flat monthly charge regardless of use.
 • LeaseCharge: lease (FK), charge_type (FK), amount, frequency [monthly, quarterly, once], start_date, end_date, is_active.
 Billing
 • Invoice: invoice_number (unique), tenant (FK), lease (FK), unit (FK), period_start, period_end, issue_date, due_date, subtotal, vat_amount, total, vat_enabled_snapshot, vat_rate_snapshot, status [issued, void], void_reason, voided_by, voided_at. Unique on (lease, period_start), which makes generation idempotent.
 • InvoiceLine: invoice (FK), kind [rent, service, utility, other], charge_type (nullable FK), description, quantity, unit_price, amount, vat_amount.
 Payments and credit
-• Payment: receipt_number (unique), tenant (FK), date_received, method [mpesa, bank, cash, cheque], amount, reference, cheque_number, cheque_bank, cheque_status [received, banked, bounced], withholding_amount, withholding_cert_no, status [posted, void], notes, statement_row (nullable FK), recorded_by.
+• Payment: receipt_number (unique), tenant (FK), date_received, method [mpesa, bank, cash, cheque] (new payments are bank deposit only; older values remain readable), amount, reference, cheque_number, cheque_bank, cheque_status [received, banked, bounced], withholding_amount, withholding_cert_no, status [posted, void], notes, statement_row (nullable FK), recorded_by.
 • PaymentAllocation: payment (FK), invoice (FK), amount, allocated_at, is_auto.
 • CreditEntry: tenant (FK), entry_date, amount (positive adds credit, negative uses it), source [overpayment, applied_to_invoice, refund], payment (nullable FK), invoice (nullable FK).
-• StatementImport: source [mpesa, bank], file, uploaded_at, uploaded_by, status [pending, completed].
+• StatementImport: source [mpesa, bank] (the import screen accepts bank statements only), file, uploaded_at, uploaded_by, status [pending, completed].
 • StatementRow: import (FK), tx_date, amount, reference, payer_name, phone, suggested_tenant (nullable FK), suggested_invoice (nullable FK), match_status [unmatched, suggested, confirmed, ignored], payment (nullable FK).
 Deposits and move-out
 • Deposit: lease (FK), amount_received, received_date, payment (nullable FK), status [held, partly_refunded, refunded, forfeited].

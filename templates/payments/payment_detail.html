@@ -22,9 +22,9 @@
 
   <div class="stack">
     <div class="metric-grid">
-      {% include 'components/metric_card.html' with label='Cash received' value=payment.amount|money:app_settings.currency hint='Money received' %}
+      {% include 'components/metric_card.html' with label='Bank deposit' value=payment.amount|money:app_settings.currency hint='Money received' %}
       {% include 'components/metric_card.html' with label='Withholding' value=payment.withholding_amount|money:app_settings.currency hint='Tax withheld by tenant' %}
-      {% include 'components/metric_card.html' with label='Total settled' value=payment.settlement_amount|money:app_settings.currency hint='Cash plus withholding' %}
+      {% include 'components/metric_card.html' with label='Total settled' value=payment.settlement_amount|money:app_settings.currency hint='Deposit plus withholding' %}
       {% include 'components/metric_card.html' with label='Credit created' value=payment.credit_amount|money:app_settings.currency hint='Carried to tenant credit' %}
     </div>
 

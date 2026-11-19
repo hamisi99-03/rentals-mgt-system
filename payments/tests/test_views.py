@@ -4,6 +4,7 @@ import pytest
 from django.urls import reverse
 
 from payments.models import Payment
+from payments.services import record_payment
 
 pytestmark = pytest.mark.django_db
 
@@ -37,13 +38,32 @@ def test_allocation_preview_endpoint(logged_in, invoice):
     assert data["allocations"][0]["amount"] == "600.00"
 
 
+def test_payment_method_is_bank_only(logged_in, invoice):
+    from payments.forms import PaymentForm
+
+    choices = dict(PaymentForm().fields["method"].choices)
+    assert list(choices) == [Payment.METHOD_BANK]
+
+    response = logged_in.post(
+        reverse("payment_new"),
+        {
+            "tenant": invoice.tenant.pk,
+            "date_received": invoice.issue_date.isoformat(),
+            "method": "cash",
+            "amount": "1000.00",
+        },
+    )
+    assert response.status_code == 200
+    assert Payment.objects.count() == 0
+
+
 def test_record_payment_auto_allocates(logged_in, invoice):
     response = logged_in.post(
         reverse("payment_new"),
         {
             "tenant": invoice.tenant.pk,
             "date_received": invoice.issue_date.isoformat(),
-            "method": "mpesa",
+            "method": "bank",
             "amount": "1000.00",
             "reference": "QK81ABC",
             "notes": "",
@@ -74,7 +94,7 @@ def test_record_payment_manual_allocation(logged_in, invoice):
         {
             "tenant": invoice.tenant.pk,
             "date_received": invoice.issue_date.isoformat(),
-            "method": "cash",
+            "method": "bank",
             "amount": "600.00",
             f"allocation_{invoice.pk}": "600.00",
             "notes": "",
@@ -94,7 +114,7 @@ def test_payments_list_and_filters(logged_in, invoice):
         {
             "tenant": invoice.tenant.pk,
             "date_received": invoice.issue_date.isoformat(),
-            "method": "cash",
+            "method": "bank",
             "amount": "1000.00",
         },
     )
@@ -113,7 +133,7 @@ def test_void_payment_view(logged_in, invoice):
         {
             "tenant": invoice.tenant.pk,
             "date_received": invoice.issue_date.isoformat(),
-            "method": "cash",
+            "method": "bank",
             "amount": "1000.00",
         },
     )
@@ -129,18 +149,14 @@ def test_void_payment_view(logged_in, invoice):
 
 
 def test_cheque_actions_view(logged_in, invoice):
-    logged_in.post(
-        reverse("payment_new"),
-        {
-            "tenant": invoice.tenant.pk,
-            "date_received": invoice.issue_date.isoformat(),
-            "method": "cheque",
-            "amount": "1000.00",
-            "cheque_number": "12345",
-            "cheque_bank": "Equity",
-        },
+    payment = record_payment(
+        invoice.tenant,
+        invoice.issue_date,
+        Payment.METHOD_CHEQUE,
+        Decimal("1000.00"),
+        cheque_number="12345",
+        cheque_bank="Equity",
     )
-    payment = Payment.objects.get()
     logged_in.post(reverse("cheque_banked", kwargs={"pk": payment.pk}))
     payment.refresh_from_db()
     assert payment.cheque_status == Payment.CHEQUE_BANKED
@@ -158,7 +174,7 @@ def test_tenant_statement_and_payments_tabs(logged_in, invoice):
         {
             "tenant": invoice.tenant.pk,
             "date_received": invoice.issue_date.isoformat(),
-            "method": "cash",
+            "method": "bank",
             "amount": "1000.00",
         },
     )
@@ -182,7 +198,7 @@ def test_invoice_detail_shows_payment(logged_in, invoice):
         {
             "tenant": invoice.tenant.pk,
             "date_received": invoice.issue_date.isoformat(),
-            "method": "cash",
+            "method": "bank",
             "amount": "400.00",
         },
     )

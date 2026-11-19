@@ -78,7 +78,7 @@ def _manual_allocations(request):
 def payment_new(request):
     initial = {
         "date_received": timezone.localdate(),
-        "method": Payment.METHOD_MPESA,
+        "method": Payment.METHOD_BANK,
     }
     invoice_id = request.GET.get("invoice")
     tenant_id = request.GET.get("tenant")

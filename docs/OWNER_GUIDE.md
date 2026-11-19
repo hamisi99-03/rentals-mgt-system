@@ -26,7 +26,7 @@ If the backup folder is missing or the last backup is over seven days old, a war
 
 - **Units** - add buildings and floors, then units. Use the table or floor grid. Unit status follows the active lease; use Reserved for a unit held for a prospect.
 - **Tenants** - add the business, contacts and documents. The profile tabs show contacts, leases, statements, payments, documents and notes.
-- **Leases** - a lease has a unit, tenant, dates, rent, deposit and optional escalation. Only one active lease may overlap a unit.
+- **Leases** - a lease has a unit, tenant, dates, rent, deposit and optional escalation. Only one active lease may overlap a unit. When a rent review rule is enabled, the interval defaults to 24 months.
 - **Prospects** - keep follow-up dates for interested businesses. Convert a prospect to a lease in one step.
 
 ## Billing
@@ -37,20 +37,22 @@ If the backup folder is missing or the last backup is over seven days old, a war
 4. Running the same month again never duplicates an invoice.
 5. Open **Invoices** to view, print or print all invoices for a period.
 
-VAT is off by default. Turn it on in Settings only when the owner is VAT-registered. Existing invoices never change when settings change.
+Every new lease automatically carries one flat **service charge** (default KES 500 a month) that covers water, electricity, security and toilet. It does not depend on how much is used and is not metered. The amount is set in Settings and can be changed on a lease's Charges screen.
+
+VAT has not been introduced yet. Leave the VAT switch off in Settings; invoices will not show VAT lines. Existing invoices never change when settings change.
 
 ## Payments and receipts
 
 - Use **Record payment** from the top bar or a tenant/invoice screen.
+- Rent is recognised only when the money is deposited in the bank account. Record the bank deposit and its reference.
 - The allocation preview pays the oldest invoice first. You can edit the amounts.
-- Cash plus tax withheld settle the invoice. Any extra becomes tenant credit and is used automatically on the next invoice.
-- Cheques can be marked banked or bounced. A bounce reverses the payment and restores the invoice balances.
+- Bank deposit plus tax withheld settle the invoice. Any extra becomes tenant credit and is used automatically on the next invoice.
 - Each payment has an A4 receipt and a thermal ESC/POS receipt.
 
 ## Deposits and move-outs
 
 - Record deposits actually received on the lease page.
-- Plan a move-out from the lease or tenant page, complete the checklist, enter final meter readings, review the refund and print the settlement.
+- Plan a move-out from the lease or tenant page, complete the checklist, enter final meter readings if a metered utility is still in use, review the refund and print the settlement.
 - Confirming the refund settles the deposit, ends the lease and frees the unit. If arrears and damages exceed the deposit, the remaining tenant balance stays outstanding.
 
 ## Maintenance and expenses
@@ -66,11 +68,10 @@ Reports include arrears, monthly income and expenses, occupancy, tenant statemen
 
 ## Month-end routine
 
-1. Record every payment and import the M-Pesa or bank statement. Confirm each suggested row; never post an unmatched row by accident.
-2. Enter the meter readings.
-3. Run Billing for the month. Check the preview and skipped count.
-4. Print or save the invoices and receipts you need.
-5. Review the Dashboard and Reports.
+1. Record every bank deposit and import the bank statement. Confirm each suggested row; never post an unmatched row by accident.
+2. Run Billing for the month. Check the preview and skipped count.
+3. Print or save the invoices and receipts you need.
+4. Review the Dashboard and Reports.
 6. Run a backup and confirm it appears in Backup history.
 
 ## Backups and restore

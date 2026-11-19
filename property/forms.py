@@ -16,7 +16,12 @@ from property.models import (
     TenantContact,
     Unit,
 )
-from property.services import record_initial_rent, record_rent_change
+from property.services import (
+    DEFAULT_ESCALATION_INTERVAL_MONTHS,
+    ensure_service_charge,
+    record_initial_rent,
+    record_rent_change,
+)
 
 
 class BuildingForm(forms.ModelForm):
@@ -89,6 +94,9 @@ class TenantForm(forms.ModelForm):
         apply_widget_classes(self)
         self.fields["primary_unit"].queryset = Unit.objects.select_related("building", "floor").all()
         self.fields["primary_unit"].help_text = "Used for document numbering before a lease exists."
+        self.fields["vat_applicable"].help_text = (
+            "VAT is not yet introduced. Leave this off."
+        )
 
 
 class TenantContactForm(forms.ModelForm):
@@ -146,8 +154,12 @@ class LeaseForm(forms.ModelForm):
         self.fields["tenant"].queryset = Tenant.objects.order_by("business_name")
         self.fields["unit"].queryset = Unit.objects.select_related("building", "floor").order_by("code")
         self.fields["escalation_type"].help_text = (
-            "Optional rule. When set, interval and next escalation date are required."
+            "Optional rule. Rent is typically reviewed every 24 months."
         )
+        if not self.instance.pk:
+            self.fields["escalation_interval_months"].initial = (
+                DEFAULT_ESCALATION_INTERVAL_MONTHS
+            )
         self.fields["next_escalation_date"].help_text = (
             "Invoices whose period starts on or after this date use the escalated rent."
         )
@@ -159,6 +171,17 @@ class LeaseForm(forms.ModelForm):
             cleaned["escalation_value"] = Decimal("0.00")
             cleaned["escalation_interval_months"] = None
             cleaned["next_escalation_date"] = None
+        elif cleaned.get("escalation_type"):
+            if not cleaned.get("escalation_interval_months"):
+                cleaned["escalation_interval_months"] = (
+                    DEFAULT_ESCALATION_INTERVAL_MONTHS
+                )
+            if not cleaned.get("next_escalation_date") and cleaned.get("start_date"):
+                from billing.services import add_months
+
+                cleaned["next_escalation_date"] = add_months(
+                    cleaned["start_date"], DEFAULT_ESCALATION_INTERVAL_MONTHS
+                )
         return cleaned
 
     def save(self, commit=True):
@@ -177,6 +200,7 @@ class LeaseForm(forms.ModelForm):
         user = get_current_user()
         if is_new:
             record_initial_rent(lease, changed_by=user)
+            ensure_service_charge(lease)
         elif old_rent is not None and old_rent != lease.monthly_rent:
             record_rent_change(lease, old_rent, changed_by=user)
         return lease

@@ -7,7 +7,6 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import OperationalError, transaction
 from django.utils import timezone
 
-from billing.models import UtilityType
 from billing.services import add_months, default_due_date, generate_invoice
 from core.models import Settings
 from operations.models import (
@@ -19,6 +18,7 @@ from operations.models import (
 )
 from payments.services import record_payment
 from property.models import Building, Floor, Lease, Tenant, TenantContact, Unit
+from property.services import ensure_service_charge
 
 
 class Command(BaseCommand):
@@ -47,6 +47,8 @@ class Command(BaseCommand):
         today = timezone.localdate()
         current_start = today.replace(day=1)
         settings_obj = Settings.load()
+        settings_obj.vat_enabled = False
+        settings_obj.save(update_fields=["vat_enabled", "updated_at"])
         currency = settings_obj.currency
 
         created = {
@@ -72,11 +74,6 @@ class Command(BaseCommand):
                     Floor.objects.create(building=building, name="First floor", sort_order=1)
                 )
 
-            UtilityType.objects.create(name="Water", measure="m3", rate_per_unit=Decimal("50.00"))
-            UtilityType.objects.create(
-                name="Electricity", measure="kWh", rate_per_unit=Decimal("25.00")
-            )
-
             leases = []
             for index in range(1, units_target + 1):
                 building_index = (index - 1) // 20 % len(buildings)
@@ -94,7 +91,7 @@ class Command(BaseCommand):
                 tenant = Tenant.objects.create(
                     business_name=f"Demo Tenant {index:02d}",
                     trade=["Retail", "Salon", "Cafe", "Services"][index % 4],
-                    vat_applicable=index % 5 == 0,
+                    vat_applicable=False,
                     withholding_applicable=index % 7 == 0,
                 )
                 TenantContact.objects.create(
@@ -113,6 +110,7 @@ class Command(BaseCommand):
                     deposit_amount=unit.base_rent * 2,
                     status=Lease.STATUS_ACTIVE,
                 )
+                ensure_service_charge(lease)
                 Deposit.objects.create(
                     lease=lease,
                     amount_received=lease.deposit_amount,
@@ -152,7 +150,7 @@ class Command(BaseCommand):
                     record_payment(
                         lease.tenant,
                         received,
-                        ["mpesa", "bank", "cash"][lease_index % 3],
+                        "bank",
                         cash,
                         withholding_amount=withholding,
                         reference=f"DEMO{month_offset:02d}{lease_index:02d}",

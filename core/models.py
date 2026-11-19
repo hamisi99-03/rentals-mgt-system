@@ -116,6 +116,16 @@ class Settings(TimeStampedModel):
     logo = models.ImageField(upload_to="branding/", null=True, blank=True)
     letterhead_text = models.TextField(blank=True)
     currency = models.CharField(max_length=10, default="KES")
+    service_charge_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("500.00"),
+        validators=[MinValueValidator(Decimal("0"))],
+        help_text=(
+            "Fixed monthly charge covering water, electricity, security and toilet, "
+            "added to every new lease."
+        ),
+    )
 
     vat_enabled = models.BooleanField(default=False)
     vat_rate = models.DecimalField(

@@ -16,10 +16,11 @@ class Payment(TimeStampedModel):
     METHOD_CHEQUE = "cheque"
     METHOD_CHOICES = [
         (METHOD_MPESA, "M-Pesa"),
-        (METHOD_BANK, "Bank"),
+        (METHOD_BANK, "Bank deposit"),
         (METHOD_CASH, "Cash"),
         (METHOD_CHEQUE, "Cheque"),
     ]
+    ENTRY_METHOD_CHOICES = [(METHOD_BANK, "Bank deposit")]
 
     CHEQUE_RECEIVED = "received"
     CHEQUE_BANKED = "banked"

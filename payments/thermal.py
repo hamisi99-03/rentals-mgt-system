@@ -72,7 +72,7 @@ def build_thermal_receipt(payment: Payment, settings_obj=None) -> bytes:
         printer.text("Allocations reversed\n")
 
     printer.text("-" * 42 + "\n")
-    printer.text(_line("Cash received", f"{currency} {payment.amount:,.2f}"))
+    printer.text(_line("Bank deposit", f"{currency} {payment.amount:,.2f}"))
     if payment.withholding_amount:
         printer.text(
             _line("Withholding", f"{currency} {payment.withholding_amount:,.2f}")

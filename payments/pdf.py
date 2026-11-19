@@ -280,7 +280,7 @@ def build_receipt_pdf(payment, settings_obj=None):
     story.append(table)
     story.append(Spacer(1, 4 * mm))
 
-    summary = [["Cash received", _money(payment.amount, currency)]]
+    summary = [["Bank deposit", _money(payment.amount, currency)]]
     if payment.withholding_amount:
         summary.append(
             ["Withholding tax", _money(payment.withholding_amount, currency)]

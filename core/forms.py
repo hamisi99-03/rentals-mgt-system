@@ -1,5 +1,7 @@
 """Forms for settings, appearance and login."""
 
+from decimal import Decimal
+
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
@@ -43,6 +45,7 @@ class SettingsForm(forms.ModelForm):
             "logo",
             "letterhead_text",
             "currency",
+            "service_charge_amount",
             "vat_enabled",
             "vat_rate",
             "withholding_rate",
@@ -63,6 +66,7 @@ class SettingsForm(forms.ModelForm):
             "reminder_template": forms.Textarea(attrs={"rows": 4}),
             "vat_rate": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             "withholding_rate": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "service_charge_amount": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             "number_padding": forms.NumberInput(attrs={"min": "3", "max": "8"}),
             "invoice_due_day": forms.NumberInput(attrs={"min": "1", "max": "28"}),
             "renewal_alert_days": forms.NumberInput(attrs={"min": "1", "max": "365"}),
@@ -75,6 +79,10 @@ class SettingsForm(forms.ModelForm):
         apply_widget_classes(self)
         self.fields["brand_color"].required = False
         self.fields["number_separator"].required = False
+        self.fields["service_charge_amount"].required = False
+        self.fields["vat_enabled"].help_text = (
+            "VAT is not yet introduced. Leave this off; invoices will not show VAT lines."
+        )
         if user is not None:
             self.fields["auto_lock_minutes"].initial = user.auto_lock_minutes
 
@@ -82,6 +90,14 @@ class SettingsForm(forms.ModelForm):
         value = self.cleaned_data.get("number_separator") or "-"
         if len(value) > 3:
             raise forms.ValidationError("Use at most three characters.")
+        return value
+
+    def clean_service_charge_amount(self):
+        value = self.cleaned_data.get("service_charge_amount")
+        if value is None:
+            if self.instance and self.instance.pk:
+                return self.instance.service_charge_amount
+            return Decimal("500.00")
         return value
 
     def clean_vat_rate(self):

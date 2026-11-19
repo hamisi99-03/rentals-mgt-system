@@ -7,6 +7,9 @@ from django.utils import timezone
 
 from property.models import Lease, LeaseRentHistory, Unit
 
+SERVICE_CHARGE_NAME = "Service charge (water, electricity, security, toilet)"
+DEFAULT_ESCALATION_INTERVAL_MONTHS = 24
+
 
 def validate_lease_fields(
     escalation_type: str,
@@ -132,3 +135,38 @@ def record_rent_change(lease, old_rent, changed_by=None):
         reason=LeaseRentHistory.REASON_MANUAL,
         changed_by=changed_by,
     )
+
+
+def ensure_service_charge(lease, amount=None):
+    """Attach the flat monthly service charge to a lease once.
+
+    The amount lives in Settings so it is never hardcoded in billing logic.
+    Water, electricity, security and toilet are covered by this one charge
+    regardless of usage, so no meter reading is created.
+    """
+    from billing.models import ChargeType, LeaseCharge
+    from core.models import Settings
+
+    if amount is None:
+        amount = Settings.load().service_charge_amount
+    amount = Decimal(str(amount or "0"))
+
+    charge_type, _created = ChargeType.objects.get_or_create(
+        name=SERVICE_CHARGE_NAME,
+        defaults={
+            "kind": ChargeType.KIND_SERVICE,
+            "vat_applicable": False,
+            "is_active": True,
+        },
+    )
+    charge, _created = LeaseCharge.objects.get_or_create(
+        lease=lease,
+        charge_type=charge_type,
+        defaults={
+            "amount": amount,
+            "frequency": LeaseCharge.FREQUENCY_MONTHLY,
+            "start_date": lease.start_date,
+            "is_active": True,
+        },
+    )
+    return charge

@@ -8,7 +8,7 @@
     <div>
       <p class="text-faint mb-0"><a href="{% url 'payments' %}">&larr; Payments</a></p>
       <h1 class="page-title">Statement imports</h1>
-      <p class="page-subtitle">Upload an M-Pesa or bank CSV, then confirm each suggested match. Nothing posts automatically.</p>
+      <p class="page-subtitle">Upload a bank CSV, then confirm each suggested match. Nothing posts automatically.</p>
     </div>
     <div class="page-actions">
       <a class="btn btn--primary" href="{% url 'payment_new' %}">Record payment</a>
@@ -46,7 +46,7 @@
       <div class="panel__header">
         <div>
           <h2 class="panel__title">Upload a statement</h2>
-          <p class="panel__subtitle">CSV only. M-Pesa and common bank exports are detected from the header row.</p>
+          <p class="panel__subtitle">CSV only. Common bank exports are detected from the header row.</p>
         </div>
       </div>
       <form method="post" enctype="multipart/form-data" novalidate>

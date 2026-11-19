@@ -14,6 +14,7 @@ from billing.services import (
     preview_period,
 )
 from property.models import Lease
+from property.services import ensure_service_charge
 
 from .conftest import add_charge, add_reading
 
@@ -360,3 +361,17 @@ def test_preview_reports_escalation(make_lease):
     assert row["escalations"]
     assert row["rent_after"] == Decimal("1100.00")
     assert row["total"] == Decimal("1100.00")
+
+
+def test_fixed_service_charge_is_flat_and_monthly(make_lease):
+    lease = make_lease()
+    charge = ensure_service_charge(lease)
+    assert charge.amount == Decimal("500.00")
+    assert charge.frequency == LeaseCharge.FREQUENCY_MONTHLY
+
+    invoice, created = generate(lease, JAN)
+    assert created
+    service_line = invoice.lines.get(charge_type=charge.charge_type)
+    assert service_line.kind == InvoiceLine.KIND_SERVICE
+    assert service_line.amount == Decimal("500.00")
+    assert invoice.total == Decimal("1500.00")
