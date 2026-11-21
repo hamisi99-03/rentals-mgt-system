@@ -13,6 +13,18 @@ HEX_COLOR_VALIDATOR = RegexValidator(
     message="Enter a colour as a hex value, for example #1D4ED8.",
 )
 
+BRAND_COLOR_CHOICES = [
+    ("", "Theme palette (no override)"),
+    ("#1D4ED8", "Ocean blue"),
+    ("#166534", "Forest green"),
+    ("#92400E", "Sunset amber"),
+    ("#334155", "Slate grey"),
+    ("#7E22CE", "Plum purple"),
+    ("#B91C1C", "Crimson red"),
+    ("#0F766E", "Teal"),
+    ("#BE185D", "Rose"),
+]
+
 
 def get_current_user():
     """Return the user attached to the current request, if any."""

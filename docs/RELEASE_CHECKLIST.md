@@ -1,4 +1,4 @@
-# Release checklist - Rentals Manager 1.0.0
+# Release checklist - Rentals Manager 1.1.0
 
 ## Automated checks
 
@@ -31,7 +31,7 @@ Coverage measured at 92% across the six application packages; critical billing/a
 ## Clean Windows installer test
 
 1. Use a Windows 10/11 machine with no Python installed.
-2. Install `dist\RentalsManager-Setup-1.0.0.exe`.
+2. Install `dist\RentalsManager-Setup-1.1.0.exe`.
 3. Launch from the desktop shortcut; confirm the setup wizard appears.
 4. Complete company details, owner password and recovery code; sign in.
 5. Confirm data is written to `%LOCALAPPDATA%\RentalsManager`, not the install folder.
@@ -70,14 +70,14 @@ Measured locally with the demo seed (40 units, 480 invoices, 320 payments, 24 ex
 ## Release assets
 
 - [ ] `dist\RentalsManager\RentalsManager.exe` (PyInstaller onedir)
-- [ ] `dist\RentalsManager-Setup-1.0.0.exe` (Inno Setup)
+- [ ] `dist\RentalsManager-Setup-1.1.0.exe` (Inno Setup)
 - [ ] `docs/OWNER_GUIDE.md` included in the build/docs folder
 - [ ] `docs/RUNNING.md` and this checklist kept with the developer source
 
 ## Build status (this workspace)
 
 - PyInstaller onedir build: completed (dist\RentalsManager\RentalsManager.exe).
-- Inno Setup installer: generated (dist\RentalsManager-Setup-1.0.0.exe, about 32 MB).
+- Inno Setup installer: generated (dist\RentalsManager-Setup-1.1.0.exe, about 32 MB).
 - A packaged-app smoke test started the local server and served the app from %RENTALS_DATA_DIR%; the clean-Windows-no-Python test remains to be done on a target machine.
 - Full suite: 222 tests. Coverage: 92%. Theme contrast: 120/120 pairs.
 

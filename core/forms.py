@@ -5,7 +5,7 @@ from decimal import Decimal
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
-from core.models import Settings, User
+from core.models import BRAND_COLOR_CHOICES, Settings, User
 
 
 def apply_widget_classes(form):
@@ -25,6 +25,12 @@ def apply_widget_classes(form):
 
 
 class SettingsForm(forms.ModelForm):
+    brand_color = forms.ChoiceField(
+        choices=BRAND_COLOR_CHOICES,
+        required=False,
+        label="Company brand colour",
+        help_text="Overrides the palette accent across the app and PDFs.",
+    )
     auto_lock_minutes = forms.IntegerField(
         min_value=1,
         max_value=240,
@@ -70,14 +76,17 @@ class SettingsForm(forms.ModelForm):
             "number_padding": forms.NumberInput(attrs={"min": "3", "max": "8"}),
             "invoice_due_day": forms.NumberInput(attrs={"min": "1", "max": "28"}),
             "renewal_alert_days": forms.NumberInput(attrs={"min": "1", "max": "365"}),
-            "brand_color": forms.TextInput(attrs={"placeholder": "#1D4ED8"}),
         }
 
     def __init__(self, *args, user=None, **kwargs):
         self.user = user
         super().__init__(*args, **kwargs)
         apply_widget_classes(self)
-        self.fields["brand_color"].required = False
+        brand_choices = list(BRAND_COLOR_CHOICES)
+        current_brand = self.instance.brand_color if self.instance else ""
+        if current_brand and current_brand not in dict(BRAND_COLOR_CHOICES):
+            brand_choices.append((current_brand, f"Custom ({current_brand})"))
+        self.fields["brand_color"].choices = brand_choices
         self.fields["number_separator"].required = False
         self.fields["service_charge_amount"].required = False
         self.fields["vat_enabled"].help_text = (

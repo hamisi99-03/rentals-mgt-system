@@ -2,7 +2,7 @@
 ; Build with: iscc installer.iss after scripts\build_windows.ps1
 
 #define MyAppName "Rentals Manager"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Rentals Manager"
 #define MyAppExeName "RentalsManager.exe"
 

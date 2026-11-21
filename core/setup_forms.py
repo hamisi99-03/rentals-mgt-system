@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 
 from core.forms import apply_widget_classes
-from core.models import HEX_COLOR_VALIDATOR, User
+from core.models import BRAND_COLOR_CHOICES, User
 
 
 class SetupForm(forms.Form):
@@ -31,7 +31,13 @@ class SetupForm(forms.Form):
     default_palette = forms.ChoiceField(
         choices=User.PALETTE_CHOICES, initial="ocean", label="Theme palette"
     )
-    brand_color = forms.CharField(max_length=7, required=False)
+    brand_color = forms.ChoiceField(
+        choices=BRAND_COLOR_CHOICES,
+        required=False,
+        initial="",
+        label="Company brand colour",
+        help_text="Overrides the palette accent across the app and PDFs.",
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -51,9 +57,3 @@ class SetupForm(forms.Form):
         if password2:
             validate_password(password2)
         return password2
-
-    def clean_brand_color(self):
-        value = (self.cleaned_data.get("brand_color") or "").strip()
-        if value:
-            HEX_COLOR_VALIDATOR(value)
-        return value

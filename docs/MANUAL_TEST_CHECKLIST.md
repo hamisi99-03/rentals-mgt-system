@@ -1,4 +1,4 @@
-# Manual test checklist - Rentals Manager 1.0.0
+# Manual test checklist - Rentals Manager 1.1.0
 
 Use this list to confirm the app works on your PC. Tick each box after checking the expected result. Test in order; later sections use data created earlier.
 
@@ -222,7 +222,7 @@ Remove-Item Env:RENTALS_DATA_DIR
 
 ## 14. Installer and window
 
-- [ ] Build/obtain `dist\RentalsManager-Setup-1.0.0.exe`.
+- [ ] Build/obtain `dist\RentalsManager-Setup-1.1.0.exe`.
 - [ ] Install on a clean Windows machine with no Python.
 - [ ] Confirm desktop and Start menu shortcuts exist.
 - [ ] Launch; complete first-run setup.
