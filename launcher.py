@@ -4,11 +4,32 @@ import os
 import socket
 import sys
 import threading
+from pathlib import Path
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 os.environ.setdefault("RENTALS_DEBUG", "0")
 
 PORT_RANGE = (8765, 8865)
+APP_USER_MODEL_ID = "RentalManager.Owner"
+
+
+def asset_path(name):
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    return str(base / "assets" / name)
+
+
+def set_app_user_model_id():
+    """Group the window under our own taskbar identity, not python.exe."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            APP_USER_MODEL_ID
+        )
+    except Exception:
+        pass
 
 
 def find_free_port():
@@ -28,8 +49,6 @@ def main():
     import django
 
     django.setup()
-
-    from pathlib import Path
 
     from django.conf import settings
     from django.core.management import call_command
@@ -62,6 +81,7 @@ def main():
 
     import webview
 
+    set_app_user_model_id()
     window = webview.create_window(
         "Rental Manager",
         f"http://127.0.0.1:{port}/",
@@ -71,7 +91,7 @@ def main():
         text_select=True,
     )
     try:
-        webview.start()
+        webview.start(icon=asset_path("icon-building.ico"))
     finally:
         perform_backup(reason="app-exit")
         server.close()

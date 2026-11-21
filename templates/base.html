@@ -21,6 +21,8 @@
       }
     })();
   </script>
+  <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="any">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon-180.png' %}">
   <link rel="stylesheet" href="{% static 'css/theme.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/print.css' %}" media="print">
@@ -43,11 +45,7 @@
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
         <a class="sidebar__brand" href="{% url 'dashboard' %}">
-          {% if app_settings.logo %}
-            <img class="brand__logo" src="{{ app_settings.logo.url }}" alt="{{ app_settings.company_name }} logo">
-          {% else %}
-            <span class="brand__badge">{{ app_settings.company_name|first|upper }}</span>
-          {% endif %}
+          <img class="brand__mark" src="{% static 'img/icon-building-1024.png' %}" alt="" width="32" height="32">
           <span class="brand__name">{{ app_settings.company_name }}</span>
         </a>
         <nav class="sidebar__nav" aria-label="Main">
@@ -77,6 +75,9 @@
                    placeholder="Search tenants, units, invoices..." autocomplete="off">
           </form>
           <div class="topbar__actions">
+            <button type="button" class="btn btn--sm" data-nav-back aria-label="Go back">
+              {% include 'components/icon.html' with name='arrow-left' %} Back
+            </button>
             <a class="btn btn--primary btn--sm" href="{% url 'payment_new' %}">
               {% include 'components/icon.html' with name='plus' %} Record payment
             </a>

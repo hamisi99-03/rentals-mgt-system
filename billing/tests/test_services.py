@@ -41,6 +41,19 @@ def test_full_month_invoice(lease):
     assert invoice.period_end == date(2026, 1, 31)
 
 
+def test_open_ended_monthly_rental_bills_full_month(make_lease):
+    lease = make_lease(
+        start_date=date(2025, 1, 1),
+        end_date=None,
+        agreement_type=Lease.AGREEMENT_MONTHLY,
+    )
+    invoice, created = generate(lease, JAN)
+    assert created is True
+    assert invoice.lines.get(kind=InvoiceLine.KIND_RENT).amount == Decimal("1000.00")
+    start, end = parse_period(JAN[0])
+    assert lease in list(eligible_leases(start, end))
+
+
 def test_mid_month_start_prorates_on_thirty_day_month(make_lease):
     lease = make_lease(start_date=date(2026, 1, 16), rent="3000.00")
     invoice, _ = generate(lease, JAN)

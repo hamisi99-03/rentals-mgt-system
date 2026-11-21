@@ -30,6 +30,17 @@
       return;
     }
 
+    var back = event.target.closest("[data-nav-back]");
+    if (back) {
+      event.preventDefault();
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.assign("/");
+      }
+      return;
+    }
+
     var toggle = event.target.closest("[data-sidebar-toggle]");
     if (toggle) {
       event.preventDefault();

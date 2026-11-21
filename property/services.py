@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils import timezone
 
 from property.models import Lease, LeaseRentHistory, Unit
@@ -51,8 +52,7 @@ def has_active_lease(unit, on_date=None) -> bool:
         unit=unit,
         status=Lease.STATUS_ACTIVE,
         start_date__lte=on_date,
-        end_date__gte=on_date,
-    ).exists()
+    ).filter(Q(end_date__gte=on_date) | Q(end_date__isnull=True)).exists()
 
 
 def current_lease(unit, on_date=None):
@@ -62,8 +62,8 @@ def current_lease(unit, on_date=None):
             unit=unit,
             status=Lease.STATUS_ACTIVE,
             start_date__lte=on_date,
-            end_date__gte=on_date,
         )
+        .filter(Q(end_date__gte=on_date) | Q(end_date__isnull=True))
         .select_related("tenant")
         .first()
     )
@@ -90,8 +90,9 @@ def refresh_unit_statuses():
         Lease.objects.filter(
             status=Lease.STATUS_ACTIVE,
             start_date__lte=today,
-            end_date__gte=today,
-        ).values_list("unit_id", flat=True)
+        )
+        .filter(Q(end_date__gte=today) | Q(end_date__isnull=True))
+        .values_list("unit_id", flat=True)
     )
     for unit in Unit.objects.all():
         if unit.pk in active_unit_ids:

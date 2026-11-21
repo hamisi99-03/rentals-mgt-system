@@ -73,7 +73,7 @@ python manage.py reset_password       # uses the recovery code shown at setup
 - With no users, opening the app redirects to `/setup/`.
 - Setup creates the owner account, company settings, theme and a one-time recovery code.
 - The recovery hash is stored in the data folder; the plain code is not stored.
-- Reset a lost password with `python manage.py reset_password` and enter the recovery code.
+- Reset a lost password from the sign-in screen with **Forgot password?**, or run `python manage.py reset_password` and enter the recovery code.
 
 ## Building the Windows delivery
 
@@ -88,9 +88,9 @@ python manage.py reset_password       # uses the recovery code shown at setup
 Outputs:
 
 - `dist\RentalsManager\RentalsManager.exe` (PyInstaller onedir)
-- `dist\RentalsManager-Setup-1.1.0.exe` (Inno Setup, per-user install)
+- `dist\RentalsManager-Setup-1.2.0.exe` (Inno Setup, per-user install)
 
-The installer creates a desktop and Start menu shortcut and an uninstaller. Business data is in `%LOCALAPPDATA%\RentalsManager`, outside the install folder, so updates/reinstalls leave it alone.
+The installer creates a desktop and Start menu shortcut and an uninstaller. The exe, installer, shortcuts and pywebview window use `assets/icon-building.ico`; the browser build uses the generated favicon and 180 px PNG in `static/img/`. The owner-uploaded company logo is separate and is used only on invoices, receipts and statements. Business data is in `%LOCALAPPDATA%\RentalsManager`, outside the install folder, so updates/reinstalls leave it alone.
 
 ## Architecture
 

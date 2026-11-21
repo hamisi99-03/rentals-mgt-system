@@ -81,6 +81,55 @@ def test_recovery_code_resets_password(settings, tmp_path, django_user_model):
     assert user.check_password("new-password-12345")
 
 
+def test_password_recovery_page_renders(client, django_user_model):
+    django_user_model.objects.create_user(username="owner", password="old-pass-123")
+    response = client.get(reverse("password_recovery"))
+    assert response.status_code == 200
+    assert b"Reset owner password" in response.content
+
+
+def test_password_recovery_resets_with_code(client, django_user_model, settings, tmp_path):
+    settings.DATA_DIR = tmp_path
+    user = django_user_model.objects.create_user(
+        username="owner", password="old-pass-123"
+    )
+    store_recovery_code("RECOVERY-CODE")
+
+    response = client.post(
+        reverse("password_recovery"),
+        {
+            "recovery_code": "RECOVERY-CODE",
+            "new_password1": "New-strong-pass-12345",
+            "new_password2": "New-strong-pass-12345",
+        },
+    )
+    assert response.status_code == 302
+    assert response["Location"] == reverse("login")
+    user.refresh_from_db()
+    assert user.check_password("New-strong-pass-12345")
+
+
+def test_password_recovery_rejects_wrong_code(client, django_user_model, settings, tmp_path):
+    settings.DATA_DIR = tmp_path
+    user = django_user_model.objects.create_user(
+        username="owner", password="old-pass-123"
+    )
+    store_recovery_code("RECOVERY-CODE")
+
+    response = client.post(
+        reverse("password_recovery"),
+        {
+            "recovery_code": "WRONG-CODE",
+            "new_password1": "New-strong-pass-12345",
+            "new_password2": "New-strong-pass-12345",
+        },
+    )
+    assert response.status_code == 200
+    assert b"not correct" in response.content
+    user.refresh_from_db()
+    assert user.check_password("old-pass-123")
+
+
 def test_help_page_and_support_bundle(logged_in):
     response = logged_in.get(reverse("help_page"))
     assert response.status_code == 200

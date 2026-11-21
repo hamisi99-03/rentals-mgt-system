@@ -25,6 +25,22 @@ def test_login_page_renders(client, django_user_model):
     response = client.get("/accounts/login/")
     assert response.status_code == 200
     assert b"Sign in" in response.content
+    assert b"img/icon-building-1024.png" in response.content
+    assert b"img/favicon.ico" in response.content
+
+
+def test_brand_icon_appears_in_shell_and_help(client, owner):
+    from django.conf import settings as django_settings
+
+    client.force_login(owner)
+    response = client.get("/")
+    assert b"img/icon-building-1024.png" in response.content
+    assert b"img/favicon.ico" in response.content
+
+    response = client.get("/help/")
+    assert response.status_code == 200
+    assert b"img/icon-building-1024.png" in response.content
+    assert f"Version {django_settings.APP_VERSION}".encode() in response.content
 
 
 def test_anonymous_is_redirected_to_login(client):
@@ -73,6 +89,12 @@ def test_shell_pages_render(client, owner, path):
     client.force_login(owner)
     response = client.get(path)
     assert response.status_code == 200
+
+
+def test_global_back_button_is_visible(client, owner):
+    client.force_login(owner)
+    response = client.get("/")
+    assert b'data-nav-back' in response.content
 
 
 def test_sidebar_lists_every_section(client, owner):

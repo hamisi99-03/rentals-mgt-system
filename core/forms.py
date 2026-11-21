@@ -6,6 +6,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
 from core.models import BRAND_COLOR_CHOICES, Settings, User
+from core.recovery import has_recovery_code, verify_recovery_code
 
 
 def apply_widget_classes(form):
@@ -144,6 +145,42 @@ class AppearanceForm(forms.ModelForm):
         }
         for name, control in controls.items():
             self.fields[name].widget.attrs["data-theme-control"] = control
+
+
+class PasswordRecoveryForm(forms.Form):
+    recovery_code = forms.CharField(
+        max_length=50,
+        label="Recovery code",
+        help_text="The code shown once during setup, for example A1B2C3-D4E5F6-A7B8C9.",
+    )
+    new_password1 = forms.CharField(
+        label="New password", widget=forms.PasswordInput
+    )
+    new_password2 = forms.CharField(
+        label="Confirm new password", widget=forms.PasswordInput
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_widget_classes(self)
+
+    def clean_recovery_code(self):
+        code = (self.cleaned_data.get("recovery_code") or "").strip()
+        if not has_recovery_code():
+            raise forms.ValidationError(
+                "No recovery code is stored for this installation. Contact technical support."
+            )
+        if not verify_recovery_code(code):
+            raise forms.ValidationError("The recovery code is not correct.")
+        return code
+
+    def clean(self):
+        cleaned = super().clean()
+        password1 = cleaned.get("new_password1")
+        password2 = cleaned.get("new_password2")
+        if password1 and password2 and password1 != password2:
+            self.add_error("new_password2", "The two passwords do not match.")
+        return cleaned
 
 
 class StyledAuthenticationForm(AuthenticationForm):

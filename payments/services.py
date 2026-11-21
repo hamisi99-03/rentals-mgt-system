@@ -21,8 +21,31 @@ def open_invoices(tenant):
     return (
         Invoice.objects.filter(tenant=tenant, status=Invoice.STATUS_ISSUED)
         .select_related("unit")
+        .prefetch_related("allocations__payment")
         .order_by("due_date", "issue_date", "id")
     )
+
+
+def tenant_account_summary(tenant):
+    """Units held, monthly rent and the outstanding amount for a tenant."""
+    from property.models import Lease
+
+    today = timezone.localdate()
+    leases = Lease.objects.filter(
+        tenant=tenant,
+        status=Lease.STATUS_ACTIVE,
+        start_date__lte=today,
+    ).filter(Q(end_date__gte=today) | Q(end_date__isnull=True))
+    unit_count = leases.values("unit_id").distinct().count()
+    monthly_rent = leases.aggregate(total=Sum("monthly_rent"))["total"] or Decimal("0.00")
+    open_rows = [invoice for invoice in open_invoices(tenant) if invoice.balance > 0]
+    outstanding = sum((invoice.balance for invoice in open_rows), Decimal("0.00"))
+    return {
+        "units": unit_count,
+        "monthly_rent": monthly_rent,
+        "outstanding": outstanding,
+        "open_invoices": len(open_rows),
+    }
 
 
 def suggest_allocations(tenant, settlement_amount: Decimal):

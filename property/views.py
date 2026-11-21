@@ -65,8 +65,8 @@ def _units_with_leases(units):
         Lease.objects.filter(
             status=Lease.STATUS_ACTIVE,
             start_date__lte=today,
-            end_date__gte=today,
         )
+        .filter(Q(end_date__gte=today) | Q(end_date__isnull=True))
         .select_related("tenant")
         .order_by("-start_date")
     )
@@ -330,8 +330,9 @@ def tenant_list(request):
         for lease in Lease.objects.filter(
             status=Lease.STATUS_ACTIVE,
             start_date__lte=today,
-            end_date__gte=today,
-        ).select_related("unit")
+        )
+        .filter(Q(end_date__gte=today) | Q(end_date__isnull=True))
+        .select_related("unit")
     }
     for tenant in tenant_rows:
         lease = active_by_tenant.get(tenant.pk)
@@ -359,8 +360,12 @@ def tenant_create(request):
     form = TenantForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         tenant = form.save()
-        messages.success(request, f"Tenant {tenant.business_name} created.")
-        return redirect("tenant_detail", pk=tenant.pk)
+        messages.success(
+            request,
+            f"Tenant {tenant.business_name} created. Choose a lease type to "
+            "assign their shop.",
+        )
+        return redirect(f"{reverse('lease_create')}?tenant={tenant.pk}")
     return render(request, "property/tenant_form.html", {"form": form, "title": "New tenant"})
 
 
@@ -588,10 +593,21 @@ def lease_list(request):
 @role_required
 def lease_create(request):
     initial = {}
+    tenant_obj = None
     tenant_id = request.GET.get("tenant")
     unit_id = request.GET.get("unit")
+    agreement_type = request.GET.get("agreement_type")
+    if agreement_type in dict(Lease.AGREEMENT_CHOICES):
+        initial["agreement_type"] = agreement_type
     if tenant_id and tenant_id.isdigit():
-        initial["tenant"] = tenant_id
+        tenant_obj = (
+            Tenant.objects.select_related("primary_unit").filter(pk=tenant_id).first()
+        )
+        if tenant_obj:
+            initial["tenant"] = tenant_obj
+            if not unit_id and tenant_obj.primary_unit_id:
+                initial["unit"] = tenant_obj.primary_unit
+                initial["monthly_rent"] = tenant_obj.primary_unit.base_rent
     if unit_id and unit_id.isdigit():
         initial["unit"] = unit_id
         unit = Unit.objects.filter(pk=unit_id).first()
@@ -602,7 +618,21 @@ def lease_create(request):
         lease = form.save()
         messages.success(request, "Lease created.")
         return redirect("lease_detail", pk=lease.pk)
-    return render(request, "property/lease_form.html", {"form": form, "title": "New lease"})
+    cancel_url = (
+        reverse("tenant_detail", kwargs={"pk": tenant_obj.pk})
+        if tenant_obj
+        else reverse("leases")
+    )
+    return render(
+        request,
+        "property/lease_form.html",
+        {
+            "form": form,
+            "title": "New lease / monthly rental",
+            "cancel_url": cancel_url,
+            "tenant_context": tenant_obj,
+        },
+    )
 
 
 @role_required

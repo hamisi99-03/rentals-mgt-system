@@ -21,7 +21,7 @@ pip install -r requirements-build.txt
 .\scripts\build_windows.ps1 -Installer
 ```
 
-Outputs `dist\RentalsManager\RentalsManager.exe` and, with Inno Setup, `dist\RentalsManager-Setup-1.1.0.exe`. The installer uses a per-user install and leaves business data in `%LOCALAPPDATA%\RentalsManager`.
+Outputs `dist\RentalsManager\RentalsManager.exe` and, with Inno Setup, `dist\RentalsManager-Setup-1.2.0.exe`. The exe, installer, shortcuts and window use the fixed brand icon in `assets/`; the app icon is never themed and the owner-uploaded company logo remains separate for invoices and receipts. The installer uses a per-user install and leaves business data in `%LOCALAPPDATA%\RentalsManager`.
 
 ## Stack
 

@@ -16,6 +16,7 @@ from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from billing.models import (
@@ -139,7 +140,7 @@ def _charge_amount(charge: LeaseCharge, lease: Lease, period_start, period_end, 
 
     if charge.frequency == LeaseCharge.FREQUENCY_MONTHLY:
         first = max(charge.start_date, lease.start_date, period_start)
-        last = min(charge.end_date or period_end, lease.end_date, period_end)
+        last = min(charge.end_date or period_end, lease.end_date or period_end, period_end)
         days = (last - first).days + 1 if last >= first else 0
         return prorated_amount(charge.amount, days, days_in_period), days
 
@@ -172,7 +173,9 @@ def _line_vat(kind, charge_type, amount, vat_enabled, tenant_vat, vat_rate):
 
 def build_line_specs(lease: Lease, rent: Decimal, period_start, period_end, settings_obj):
     days_in_period = period_days(period_start, period_end)
-    lease_days = active_days(lease.start_date, lease.end_date, period_start, period_end)
+    lease_days = active_days(
+        lease.start_date, lease.end_date or period_end, period_start, period_end
+    )
     rent_amount = prorated_amount(rent, lease_days, days_in_period)
     rent_description = f"Rent - {period_label(period_start)}"
     if lease_days < days_in_period:
@@ -217,7 +220,7 @@ def build_line_specs(lease: Lease, rent: Decimal, period_start, period_end, sett
             unit=lease.unit,
             invoice_line__isnull=True,
             reading_date__gte=lease.start_date,
-            reading_date__lte=min(period_end, lease.end_date),
+            reading_date__lte=min(period_end, lease.end_date or period_end),
         )
         .select_related("utility_type")
         .order_by("reading_date", "id")
@@ -262,8 +265,8 @@ def eligible_leases(period_start, period_end):
         Lease.objects.filter(
             status__in=[Lease.STATUS_ACTIVE, Lease.STATUS_EXPIRED],
             start_date__lte=period_end,
-            end_date__gte=period_start,
         )
+        .filter(Q(end_date__gte=period_start) | Q(end_date__isnull=True))
         .select_related("tenant", "unit", "unit__building")
         .order_by("unit__code", "id")
     )

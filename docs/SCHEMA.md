@@ -16,7 +16,7 @@ Tenants and documents
 • TenantContact: tenant (FK), name, role_title, phone, email, is_primary.
 • Document: owner_type and owner_id (generic link to Tenant, Lease, Expense, MaintenanceRequest or MoveOut), doc_type [lease, id_copy, permit, receipt, photo, other], file, uploaded_by, uploaded_at.
 Leases and charges
-• Lease: tenant (FK), unit (FK), start_date, end_date, monthly_rent, deposit_amount, escalation_type [none, percent, fixed], escalation_value, escalation_interval_months (defaults to 24 when a rule is enabled), next_escalation_date, status [draft, active, expired, terminated], terminated_on, termination_reason, notes.
+• Lease: tenant (FK), unit (FK), agreement_type [lease, monthly], start_date, end_date (blank for an open-ended monthly rental), monthly_rent, deposit_amount, escalation_type [none, percent, fixed], escalation_value, escalation_interval_months (defaults to 24 when a rule is enabled), next_escalation_date, status [draft, active, expired, terminated], terminated_on, termination_reason, notes.
 • LeaseRentHistory: lease (FK), effective_date, old_rent, new_rent, reason [initial, escalation, manual], changed_by.
 • ChargeType: name, kind [service, utility, other], vat_applicable, is_active. Rent comes from the lease itself. A default "Service charge (water, electricity, security, toilet)" type is attached to every new lease at the Settings amount (500.00 by default), as a flat monthly charge regardless of use.
 • LeaseCharge: lease (FK), charge_type (FK), amount, frequency [monthly, quarterly, once], start_date, end_date, is_active.

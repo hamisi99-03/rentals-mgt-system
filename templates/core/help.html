@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Help &amp; support &middot; {{ app_settings.company_name }}{% endblock %}
 
 {% block content %}
   <div class="page-header">
-    <div>
-      <h1 class="page-title">Help &amp; support</h1>
-      <p class="page-subtitle">Version {{ version }} &middot; fully offline.</p>
+    <div class="row">
+      <img class="brand__mark" src="{% static 'img/icon-building-1024.png' %}" alt="Rentals Manager" width="48" height="48">
+      <div>
+        <h1 class="page-title">Rentals Manager</h1>
+        <p class="page-subtitle">Help &amp; support &middot; Version {{ version }} &middot; fully offline.</p>
+      </div>
     </div>
   </div>
 

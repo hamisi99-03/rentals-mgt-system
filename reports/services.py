@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from urllib.parse import quote
 
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from billing.models import Invoice, InvoiceLine, with_balances
@@ -168,8 +168,9 @@ def occupancy_report(building=None, today=None):
         for lease in Lease.objects.filter(
             status=Lease.STATUS_ACTIVE,
             start_date__lte=today,
-            end_date__gte=today,
-        ).select_related("tenant")
+        )
+        .filter(Q(end_date__gte=today) | Q(end_date__isnull=True))
+        .select_related("tenant")
     }
     rows = []
     counts = {

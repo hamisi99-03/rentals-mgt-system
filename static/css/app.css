@@ -904,8 +904,26 @@ dialog::backdrop {
   margin-bottom: var(--space-lg);
 }
 
+.login-mark {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+}
+
+.login-mark img {
+  object-fit: contain;
+}
+
+.brand__mark {
+  object-fit: contain;
+  flex: none;
+}
+
 .login-brand__name {
   font-weight: 650;
+  margin-top: calc(var(--space-xs) * -1);
+  margin-bottom: var(--space-md);
+  text-align: center;
 }
 
 .login-footer {

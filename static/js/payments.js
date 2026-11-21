@@ -9,6 +9,11 @@
   var currency = form.dataset.currency || "";
   var body = document.getElementById("allocation-body");
   var creditEl = document.getElementById("allocation-credit");
+  var summaryEl = form.querySelector("[data-tenant-summary]");
+  var summaryUnits = form.querySelector("[data-summary-units]");
+  var summaryRent = form.querySelector("[data-summary-rent]");
+  var summaryOutstanding = form.querySelector("[data-summary-outstanding]");
+  var summaryInvoices = form.querySelector("[data-summary-invoices]");
   var tenant = form.querySelector('[name="tenant"]');
   var amount = form.querySelector('[name="amount"]');
   var withholding = form.querySelector('[name="withholding_amount"]');
@@ -33,16 +38,38 @@
     });
   }
 
+  function renderSummary(summary) {
+    if (!summaryEl) return;
+    if (!summary) {
+      summaryEl.style.display = "none";
+      return;
+    }
+    summaryEl.style.display = "";
+    if (summaryUnits) summaryUnits.textContent = summary.units;
+    if (summaryRent) summaryRent.textContent = money(summary.monthly_rent);
+    if (summaryOutstanding) {
+      summaryOutstanding.textContent = money(summary.outstanding);
+    }
+    if (summaryInvoices) summaryInvoices.textContent = summary.open_invoices;
+  }
+
+  function emptyRow(message) {
+    var row = document.createElement("tr");
+    var cell = document.createElement("td");
+    cell.colSpan = 4;
+    cell.className = "table-empty";
+    cell.textContent = message;
+    row.appendChild(cell);
+    return row;
+  }
+
   function render(data) {
+    renderSummary(data.summary);
     body.innerHTML = "";
     if (!data.allocations.length) {
-      var empty = document.createElement("tr");
-      var cell = document.createElement("td");
-      cell.colSpan = 4;
-      cell.className = "table-empty";
-      cell.textContent = "No open invoices; the whole amount becomes credit.";
-      empty.appendChild(cell);
-      body.appendChild(empty);
+      body.appendChild(
+        emptyRow("No open invoices; the whole amount becomes credit.")
+      );
     } else {
       data.allocations.forEach(function (allocation) {
         var row = document.createElement("tr");
@@ -87,7 +114,15 @@
   }
 
   function refresh() {
-    if (!tenant.value) return;
+    if (!tenant.value) {
+      if (summaryEl) summaryEl.style.display = "none";
+      body.innerHTML = "";
+      body.appendChild(
+        emptyRow("Choose a tenant and amount to see invoices.")
+      );
+      creditEl.textContent = money(0);
+      return;
+    }
     var params = new URLSearchParams({
       tenant: tenant.value,
       amount: amount.value || "0",

@@ -7,6 +7,9 @@
     <div>
       <p class="text-faint mb-0"><a href="{% url 'leases' %}">&larr; Leases</a></p>
       <h1 class="page-title">{{ title }}</h1>
+      {% if tenant_context %}
+        <p class="page-subtitle">Assigning a shop to <strong>{{ tenant_context.business_name }}</strong>. Choose a fixed-term lease or monthly rental.</p>
+      {% endif %}
     </div>
   </div>
 
@@ -17,12 +20,13 @@
         <div class="panel__header">
           <div>
             <h2 class="panel__title">Parties and period</h2>
-            <p class="panel__subtitle">A unit can only have one active lease at a time, and dates may not overlap.</p>
+            <p class="panel__subtitle">A unit can only have one active agreement at a time. Monthly rentals have no end date.</p>
           </div>
         </div>
         <div class="form-grid">
           {% include 'components/field.html' with field=form.tenant %}
           {% include 'components/field.html' with field=form.unit %}
+          {% include 'components/field.html' with field=form.agreement_type %}
           {% include 'components/field.html' with field=form.start_date %}
           {% include 'components/field.html' with field=form.end_date %}
           {% include 'components/field.html' with field=form.status %}
@@ -68,8 +72,26 @@
     </div>
 
     <div class="form-actions">
-      <a class="btn" href="{% if lease %}{% url 'lease_detail' lease.pk %}{% else %}{% url 'leases' %}{% endif %}">Cancel</a>
+      <a class="btn" href="{% if lease %}{% url 'lease_detail' lease.pk %}{% elif cancel_url %}{{ cancel_url }}{% else %}{% url 'leases' %}{% endif %}">Cancel</a>
       <button type="submit" class="btn btn--primary">Save lease</button>
     </div>
   </form>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    (function () {
+      var type = document.getElementById("id_agreement_type");
+      var end = document.getElementById("id_end_date");
+      if (!type || !end) return;
+      var field = end.closest(".form-field");
+      function sync() {
+        var monthly = type.value === "monthly";
+        if (field) field.style.display = monthly ? "none" : "";
+        end.disabled = monthly;
+      }
+      type.addEventListener("change", sync);
+      sync();
+    })();
+  </script>
 {% endblock %}

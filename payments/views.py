@@ -26,6 +26,7 @@ from payments.services import (
     mark_cheque_bounced,
     record_payment,
     suggest_allocations,
+    tenant_account_summary,
     void_payment,
 )
 from payments.thermal import build_thermal_receipt
@@ -128,6 +129,9 @@ def payment_new(request):
     if preview_tenant is None:
         preview_rows = []
         preview_credit = Decimal("0")
+    preview_summary = (
+        tenant_account_summary(preview_tenant) if preview_tenant is not None else None
+    )
 
     return render(
         request,
@@ -137,6 +141,7 @@ def payment_new(request):
             "preview_tenant": preview_tenant,
             "preview_rows": preview_rows or [],
             "preview_credit": preview_credit,
+            "preview_summary": preview_summary,
             "preview_error": error_message,
         },
     )
@@ -150,6 +155,13 @@ def allocation_preview(request):
     )
     if tenant is None:
         return JsonResponse({"error": "Unknown tenant."}, status=400)
+    summary = tenant_account_summary(tenant)
+    summary_json = {
+        "units": summary["units"],
+        "monthly_rent": f"{summary['monthly_rent']:.2f}",
+        "outstanding": f"{summary['outstanding']:.2f}",
+        "open_invoices": summary["open_invoices"],
+    }
     amount = _decimal(request.GET.get("amount"))
     withholding = (
         _decimal(request.GET.get("withholding_amount"))
@@ -158,12 +170,20 @@ def allocation_preview(request):
     )
     settlement = amount + withholding
     if settlement <= 0:
-        return JsonResponse({"settlement": "0.00", "credit": "0.00", "allocations": []})
+        return JsonResponse(
+            {
+                "settlement": "0.00",
+                "credit": "0.00",
+                "allocations": [],
+                "summary": summary_json,
+            }
+        )
     rows, credit = suggest_allocations(tenant, settlement)
     return JsonResponse(
         {
             "settlement": f"{settlement:.2f}",
             "credit": f"{credit:.2f}",
+            "summary": summary_json,
             "allocations": [
                 {
                     "invoice_id": row["invoice"].pk,

@@ -267,6 +267,89 @@ def test_editing_a_lease_does_not_duplicate_the_service_charge(tenant, unit):
     assert lease.charges.filter(charge_type__name=SERVICE_CHARGE_NAME).count() == 1
 
 
+def test_monthly_rental_saves_without_end_date(tenant, unit):
+    today = timezone.localdate()
+    form = LeaseForm(
+        data={
+            "tenant": tenant.pk,
+            "unit": unit.pk,
+            "agreement_type": Lease.AGREEMENT_MONTHLY,
+            "start_date": today.isoformat(),
+            "end_date": "",
+            "monthly_rent": "25000.00",
+            "deposit_amount": "0",
+            "escalation_type": "none",
+            "escalation_value": "0",
+            "status": "active",
+        }
+    )
+    assert form.is_valid(), form.errors
+    lease = form.save()
+    assert lease.agreement_type == Lease.AGREEMENT_MONTHLY
+    assert lease.end_date is None
+    unit.refresh_from_db()
+    assert unit.status == Unit.STATUS_OCCUPIED
+    assert tenant.current_lease == lease
+
+
+def test_fixed_term_lease_requires_end_date(tenant, unit):
+    today = timezone.localdate()
+    form = LeaseForm(
+        data={
+            "tenant": tenant.pk,
+            "unit": unit.pk,
+            "agreement_type": Lease.AGREEMENT_LEASE,
+            "start_date": today.isoformat(),
+            "end_date": "",
+            "monthly_rent": "25000.00",
+            "deposit_amount": "0",
+            "escalation_type": "none",
+            "escalation_value": "0",
+            "status": "active",
+        }
+    )
+    assert not form.is_valid()
+    assert "end_date" in form.errors
+
+
+def test_open_ended_rental_blocks_overlapping_active_lease(tenant, unit):
+    today = timezone.localdate()
+    monthly = LeaseForm(
+        data={
+            "tenant": tenant.pk,
+            "unit": unit.pk,
+            "agreement_type": Lease.AGREEMENT_MONTHLY,
+            "start_date": today.isoformat(),
+            "end_date": "",
+            "monthly_rent": "25000.00",
+            "deposit_amount": "0",
+            "escalation_type": "none",
+            "escalation_value": "0",
+            "status": "active",
+        }
+    )
+    assert monthly.is_valid(), monthly.errors
+    monthly.save()
+
+    other = Tenant.objects.create(business_name="Other Shop")
+    overlapping = LeaseForm(
+        data={
+            "tenant": other.pk,
+            "unit": unit.pk,
+            "agreement_type": Lease.AGREEMENT_LEASE,
+            "start_date": (today + timedelta(days=30)).isoformat(),
+            "end_date": (today + timedelta(days=365)).isoformat(),
+            "monthly_rent": "25000.00",
+            "deposit_amount": "0",
+            "escalation_type": "none",
+            "escalation_value": "0",
+            "status": "active",
+        }
+    )
+    assert not overlapping.is_valid()
+    assert "unit" in overlapping.errors
+
+
 def test_lease_form_defaults_rent_review_to_24_months(tenant, unit):
     from billing.services import add_months
 

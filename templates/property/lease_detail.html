@@ -7,10 +7,11 @@
   <div class="page-header">
     <div>
       <p class="text-faint mb-0"><a href="{% url 'leases' %}">&larr; Leases</a></p>
-      <h1 class="page-title">Lease &middot; {{ lease.unit.code }}</h1>
+      <h1 class="page-title">Agreement &middot; {{ lease.unit.code }}</h1>
       <p class="page-subtitle">
         <a href="{% url 'tenant_detail' lease.tenant.pk %}">{{ lease.tenant.business_name }}</a>
-        &middot; {{ lease.start_date|date:"d M Y" }} to {{ lease.end_date|date:"d M Y" }}
+        &middot; {{ lease.get_agreement_type_display }} &middot; {{ lease.start_date|date:"d M Y" }}
+        {% if lease.end_date %}to {{ lease.end_date|date:"d M Y" }}{% else %}(open-ended){% endif %}
       </p>
     </div>
     <div class="page-actions">
@@ -44,8 +45,9 @@
         <dl class="definition-list">
           <dt>Tenant</dt><dd><a href="{% url 'tenant_detail' lease.tenant.pk %}">{{ lease.tenant.business_name }}</a></dd>
           <dt>Unit</dt><dd><a href="{% url 'unit_detail' lease.unit.pk %}">{{ lease.unit.code }}</a> &middot; {{ lease.unit.building.name }}, {{ lease.unit.floor.name }}</dd>
+          <dt>Agreement</dt><dd>{{ lease.get_agreement_type_display }}</dd>
           <dt>Start</dt><dd>{{ lease.start_date|date:"d M Y" }}</dd>
-          <dt>End</dt><dd>{{ lease.end_date|date:"d M Y" }}</dd>
+          <dt>End</dt><dd>{% if lease.end_date %}{{ lease.end_date|date:"d M Y" }}{% else %}Open-ended{% endif %}</dd>
           <dt>Rent</dt><dd>{{ lease.monthly_rent|money:app_settings.currency }}</dd>
           <dt>Deposit</dt><dd>{{ lease.deposit_amount|money:app_settings.currency }}</dd>
           <dt>Escalation</dt><dd>{{ lease.get_escalation_type_display }}{% if lease.escalation_type != 'none' %} &middot; {% if lease.escalation_type == 'percent' %}{{ lease.escalation_value|percentage }}{% else %}{{ lease.escalation_value|money:app_settings.currency }}{% endif %} every {{ lease.escalation_interval_months }} months{% endif %}</dd>

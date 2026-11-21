@@ -12,7 +12,7 @@
     </div>
     <div class="page-actions">
       <a class="btn" href="{% url 'unit_edit' unit.pk %}">Edit</a>
-      <a class="btn" href="{% url 'lease_create' %}?unit={{ unit.pk }}">New lease</a>
+      <a class="btn" href="{% url 'lease_create' %}?unit={{ unit.pk }}">New lease / rental</a>
       <form method="post" action="{% url 'unit_toggle_active' unit.pk %}" data-confirm="{% if unit.is_active %}Archive this unit?{% else %}Restore this unit?{% endif %}">
         {% csrf_token %}
         <button type="submit" class="btn">{% if unit.is_active %}Archive{% else %}Restore{% endif %}</button>
@@ -36,21 +36,22 @@
       <section class="panel">
         <div class="panel__header">
           <div>
-            <h2 class="panel__title">Current lease</h2>
-            <p class="panel__subtitle">Active lease covering today.</p>
+            <h2 class="panel__title">Current agreement</h2>
+            <p class="panel__subtitle">Active lease or monthly rental covering today.</p>
           </div>
           {% if current_lease %}<a class="btn btn--sm" href="{% url 'lease_detail' current_lease.pk %}">Open lease</a>{% endif %}
         </div>
         {% if current_lease %}
           <dl class="definition-list">
             <dt>Tenant</dt><dd><a href="{% url 'tenant_detail' current_lease.tenant.pk %}">{{ current_lease.tenant.business_name }}</a></dd>
-            <dt>Period</dt><dd>{{ current_lease.start_date|date:"d M Y" }} to {{ current_lease.end_date|date:"d M Y" }}</dd>
+            <dt>Agreement</dt><dd>{{ current_lease.get_agreement_type_display }}</dd>
+            <dt>Period</dt><dd>{{ current_lease.start_date|date:"d M Y" }}{% if current_lease.end_date %} to {{ current_lease.end_date|date:"d M Y" }}{% else %} (open-ended){% endif %}</dd>
             <dt>Rent</dt><dd>{{ current_lease.monthly_rent|money:app_settings.currency }}</dd>
             <dt>Deposit</dt><dd>{{ current_lease.deposit_amount|money:app_settings.currency }}</dd>
             <dt>Status</dt><dd>{% include 'components/badge.html' with label=current_lease.get_status_display tone=current_lease.status|status_tone %}</dd>
           </dl>
         {% else %}
-          {% include 'components/empty_state.html' with icon='billing' title='No active lease' text='Create a lease to occupy this unit.' %}
+          {% include 'components/empty_state.html' with icon='billing' title='No active lease' text='Create a lease or monthly rental to occupy this unit.' %}
         {% endif %}
       </section>
 
@@ -81,8 +82,8 @@
     <section class="panel">
       <div class="panel__header">
         <div>
-          <h2 class="panel__title">Lease history</h2>
-          <p class="panel__subtitle">All leases recorded for this unit.</p>
+          <h2 class="panel__title">Agreement history</h2>
+          <p class="panel__subtitle">All leases and monthly rentals recorded for this unit.</p>
         </div>
       </div>
       <div class="table-wrap">
@@ -95,7 +96,7 @@
               <tr>
                 <td>{{ lease.tenant.business_name }}</td>
                 <td>{{ lease.start_date|date:"d M Y" }}</td>
-                <td>{{ lease.end_date|date:"d M Y" }}</td>
+                <td>{% if lease.end_date %}{{ lease.end_date|date:"d M Y" }}{% else %}Open-ended{% endif %}</td>
                 <td class="is-numeric">{{ lease.monthly_rent|money:app_settings.currency }}</td>
                 <td>{% include 'components/badge.html' with label=lease.get_status_display tone=lease.status|status_tone %}</td>
                 <td class="is-numeric"><a class="btn btn--sm" href="{% url 'lease_detail' lease.pk %}">Open</a></td>

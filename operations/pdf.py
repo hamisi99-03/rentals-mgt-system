@@ -181,7 +181,11 @@ def build_move_out_pdf(move_out, settings_obj=None):
             styles["small"],
         ),
         Paragraph(
-            f"Lease {lease.start_date:%d %b %Y} - {lease.end_date:%d %b %Y}",
+            (
+                f"Lease {lease.start_date:%d %b %Y} - {lease.end_date:%d %b %Y}"
+                if lease.end_date
+                else f"Monthly rental from {lease.start_date:%d %b %Y}"
+            ),
             styles["small"],
         ),
     ]

@@ -161,6 +161,105 @@ def test_tenant_create_and_all_profile_tabs(logged_in):
         assert response.status_code == 200
 
 
+def test_tenant_rejected_when_primary_unit_is_occupied(logged_in, tenant, unit, lease):
+    unit.refresh_from_db()
+    assert unit.status == Unit.STATUS_OCCUPIED
+
+    response = logged_in.post(
+        reverse("tenant_create"),
+        {
+            "business_name": "Second Tenant",
+            "trade": "Retail",
+            "id_or_kra_pin": "",
+            "permit_number": "",
+            "primary_unit": unit.pk,
+            "status": "active",
+            "notes": "",
+        },
+    )
+    assert response.status_code == 200
+    assert not Tenant.objects.filter(business_name="Second Tenant").exists()
+    assert b"is occupied by" in response.content
+
+
+def test_tenant_rejected_when_primary_unit_is_reserved(logged_in, unit):
+    unit.status = Unit.STATUS_RESERVED
+    unit.save(update_fields=["status"])
+
+    response = logged_in.post(
+        reverse("tenant_create"),
+        {
+            "business_name": "Second Tenant",
+            "trade": "Retail",
+            "id_or_kra_pin": "",
+            "permit_number": "",
+            "primary_unit": unit.pk,
+            "status": "active",
+            "notes": "",
+        },
+    )
+    assert response.status_code == 200
+    assert not Tenant.objects.filter(business_name="Second Tenant").exists()
+    assert b"is reserved" in response.content
+
+
+def test_tenant_edit_allows_its_own_occupied_unit(logged_in, tenant, unit, lease):
+    response = logged_in.post(
+        reverse("tenant_edit", kwargs={"pk": tenant.pk}),
+        {
+            "business_name": tenant.business_name,
+            "trade": tenant.trade,
+            "id_or_kra_pin": "",
+            "permit_number": "",
+            "primary_unit": unit.pk,
+            "status": tenant.status,
+            "notes": "",
+        },
+    )
+    assert response.status_code == 302
+    tenant.refresh_from_db()
+    assert tenant.primary_unit_id == unit.pk
+
+
+def test_new_tenant_redirects_to_assign_shop(logged_in):
+    response = logged_in.post(
+        reverse("tenant_create"),
+        {
+            "business_name": "Salon Bella",
+            "trade": "Beauty",
+            "id_or_kra_pin": "",
+            "permit_number": "",
+            "primary_unit": "",
+            "status": "active",
+            "notes": "",
+        },
+    )
+    assert response.status_code == 302
+    assert response["Location"].startswith(reverse("lease_create"))
+
+    tenant = Tenant.objects.get(business_name="Salon Bella")
+    form_page = logged_in.get(response["Location"])
+    assert form_page.status_code == 200
+    assert form_page.context["form"].initial["tenant"] == tenant
+    assert b"Assigning a shop to" in form_page.content
+    assert b"Choose a fixed-term lease or monthly rental" in form_page.content
+
+
+def test_lease_create_prefills_link_choice(logged_in, tenant):
+    response = logged_in.get(
+        reverse("lease_create")
+        + f"?tenant={tenant.pk}&agreement_type=monthly"
+    )
+    assert response.status_code == 200
+    assert response.context["form"].initial["agreement_type"] == "monthly"
+
+    response = logged_in.get(
+        reverse("lease_create")
+        + f"?tenant={tenant.pk}&agreement_type=lease"
+    )
+    assert response.context["form"].initial["agreement_type"] == "lease"
+
+
 def test_tenant_contact_lifecycle(logged_in, tenant):
     response = logged_in.post(
         reverse("contact_create", kwargs={"pk": tenant.pk}),
@@ -278,7 +377,31 @@ def test_overlapping_lease_rejected_by_form(logged_in, tenant, unit, lease):
     )
     assert response.status_code == 200
     assert Lease.objects.count() == 1
-    assert b"already has an active lease" in response.content
+    assert b"is occupied by" in response.content
+
+
+def test_lease_rejected_when_unit_is_reserved(logged_in, tenant, unit):
+    unit.status = Unit.STATUS_RESERVED
+    unit.save(update_fields=["status"])
+    today = timezone.localdate()
+
+    response = logged_in.post(
+        reverse("lease_create"),
+        {
+            "tenant": tenant.pk,
+            "unit": unit.pk,
+            "start_date": today.isoformat(),
+            "end_date": (today + timedelta(days=365)).isoformat(),
+            "monthly_rent": "25000.00",
+            "deposit_amount": "0",
+            "escalation_type": "none",
+            "escalation_value": "0",
+            "status": "active",
+        },
+    )
+    assert response.status_code == 200
+    assert not Lease.objects.filter(unit=unit).exists()
+    assert b"is reserved" in response.content
 
 
 def test_terminate_lease_frees_unit(logged_in, lease, unit):

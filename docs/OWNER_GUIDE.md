@@ -6,7 +6,7 @@ Rentals Manager keeps the rent, payments, tenants and building records on this P
 
 1. Install Rentals Manager and open it from the desktop shortcut or Start menu.
 2. The first-time setup asks for the company name, contact details, logo, backup drive and owner password. It also chooses a theme.
-3. The setup shows a **recovery code once**. Write it down and keep it with the company records. It is the only way to reset the owner password without technical help.
+3. The setup shows a **recovery code once**. Write it down and keep it with the company records. Use it with **Forgot password?** on the sign-in screen to reset the owner password if it is ever lost.
 4. Sign in with the owner username and password.
 
 ## The dashboard
@@ -26,7 +26,7 @@ If the backup folder is missing or the last backup is over seven days old, a war
 
 - **Units** - add buildings and floors, then units. Use the table or floor grid. Unit status follows the active lease; use Reserved for a unit held for a prospect.
 - **Tenants** - add the business, contacts and documents. The profile tabs show contacts, leases, statements, payments, documents and notes.
-- **Leases** - a lease has a unit, tenant, dates, rent, deposit and optional escalation. Only one active lease may overlap a unit. When a rent review rule is enabled, the interval defaults to 24 months.
+- **Leases & rentals** - an agreement has a unit, tenant, rent, deposit and optional escalation. Choose **Fixed-term lease** (needs an end date) or **Monthly rental** (open-ended until terminated). Only one active agreement may overlap a unit. When a rent review rule is enabled, the interval defaults to 24 months.
 - **Prospects** - keep follow-up dates for interested businesses. Convert a prospect to a lease in one step.
 
 ## Billing

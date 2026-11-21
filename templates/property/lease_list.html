@@ -6,12 +6,12 @@
 {% block content %}
   <div class="page-header">
     <div>
-      <h1 class="page-title">Leases</h1>
-      <p class="page-subtitle">All leases, their periods and rent.</p>
+      <h1 class="page-title">Leases &amp; rentals</h1>
+      <p class="page-subtitle">Fixed-term leases and open-ended monthly rentals.</p>
     </div>
     <div class="page-actions">
       <a class="btn" href="{% url 'import_data' %}">{% include 'components/icon.html' with name='database' %} Import</a>
-      <a class="btn btn--primary" href="{% url 'lease_create' %}">{% include 'components/icon.html' with name='plus' %} Lease</a>
+      <a class="btn btn--primary" href="{% url 'lease_create' %}">{% include 'components/icon.html' with name='plus' %} Lease / rental</a>
     </div>
   </div>
 
@@ -45,21 +45,22 @@
 
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>Unit</th><th>Tenant</th><th>Start</th><th>End</th><th class="is-numeric">Rent</th><th class="is-numeric">Deposit</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Unit</th><th>Tenant</th><th>Type</th><th>Start</th><th>End</th><th class="is-numeric">Rent</th><th class="is-numeric">Deposit</th><th>Status</th><th></th></tr></thead>
         <tbody>
           {% for lease in leases %}
             <tr>
               <td><a class="table-link" href="{% url 'lease_detail' lease.pk %}">{{ lease.unit.code }}</a></td>
               <td><a class="table-link" href="{% url 'tenant_detail' lease.tenant.pk %}">{{ lease.tenant.business_name }}</a></td>
+              <td>{{ lease.get_agreement_type_display }}</td>
               <td class="nowrap">{{ lease.start_date|date:"d M Y" }}</td>
-              <td class="nowrap">{{ lease.end_date|date:"d M Y" }}</td>
+              <td class="nowrap">{% if lease.end_date %}{{ lease.end_date|date:"d M Y" }}{% else %}Open-ended{% endif %}</td>
               <td class="is-numeric">{{ lease.monthly_rent|money:app_settings.currency }}</td>
               <td class="is-numeric">{{ lease.deposit_amount|money:app_settings.currency }}</td>
               <td>{% include 'components/badge.html' with label=lease.get_status_display tone=lease.status|status_tone %}</td>
               <td class="is-numeric"><a class="btn btn--sm" href="{% url 'lease_detail' lease.pk %}">Open</a></td>
             </tr>
           {% empty %}
-            <tr><td class="table-empty" colspan="8">No leases match. <a href="{% url 'lease_create' %}">Create a lease</a> or import a workbook.</td></tr>
+            <tr><td class="table-empty" colspan="9">No leases or rentals match. <a href="{% url 'lease_create' %}">Create one</a> or import a workbook.</td></tr>
           {% endfor %}
         </tbody>
       </table>

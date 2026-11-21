@@ -1,19 +1,16 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Sign in &middot; {{ app_settings.company_name }}{% endblock %}
 
 {% block auth_content %}
   <div class="login-card">
-    <div class="login-brand">
-      {% if app_settings.logo %}
-        <img class="brand__logo" src="{{ app_settings.logo.url }}" alt="{{ app_settings.company_name }} logo">
-      {% else %}
-        <span class="brand__badge">{{ app_settings.company_name|first|upper }}</span>
-      {% endif %}
-      <span class="login-brand__name">{{ app_settings.company_name }}</span>
+    <div class="login-mark">
+      <img src="{% static 'img/icon-building-1024.png' %}" alt="Rentals Manager" width="96" height="96">
     </div>
 
     <h1>Sign in</h1>
+    <p class="login-brand__name">{{ app_settings.company_name }}</p>
     <p class="text-muted">Rental manager for the building office.</p>
 
     {% if request.GET.locked %}
@@ -32,5 +29,6 @@
     </form>
 
     <p class="login-footer">Sign in with the owner password. The app locks itself when left idle.</p>
+    <p class="login-footer"><a href="{% url 'password_recovery' %}">Forgot password?</a></p>
   </div>
 {% endblock %}

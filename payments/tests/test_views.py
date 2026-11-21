@@ -38,6 +38,21 @@ def test_allocation_preview_endpoint(logged_in, invoice):
     assert data["allocations"][0]["amount"] == "600.00"
 
 
+def test_allocation_preview_returns_tenant_summary(logged_in, invoice):
+    response = logged_in.get(
+        reverse("allocation_preview")
+        + f"?tenant={invoice.tenant.pk}&amount=0"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["allocations"] == []
+    summary = data["summary"]
+    assert summary["units"] == 1
+    assert summary["monthly_rent"] == "1000.00"
+    assert summary["outstanding"] == f"{invoice.total:.2f}"
+    assert summary["open_invoices"] == 1
+
+
 def test_payment_method_is_bank_only(logged_in, invoice):
     from payments.forms import PaymentForm
 

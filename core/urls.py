@@ -13,6 +13,7 @@ urlpatterns = [
     path("settings/backup/now/", views.backup_now, name="backup_now"),
     path("setup/", views.setup, name="setup"),
     path("accounts/login/", views.AppLoginView.as_view(), name="login"),
+    path("accounts/recover/", views.password_recovery, name="password_recovery"),
     path("accounts/logout/", views.AppLogoutView.as_view(), name="logout"),
     path("accounts/lock/", views.lock_session, name="lock"),
     path("help/", views.help_page, name="help_page"),

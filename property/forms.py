@@ -92,8 +92,12 @@ class TenantForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         apply_widget_classes(self)
-        self.fields["primary_unit"].queryset = Unit.objects.select_related("building", "floor").all()
-        self.fields["primary_unit"].help_text = "Used for document numbering before a lease exists."
+        self.fields["primary_unit"].queryset = Unit.objects.select_related(
+            "building", "floor"
+        ).all()
+        self.fields["primary_unit"].help_text = (
+            "Only vacant units can be assigned. Used for document numbering before a lease exists."
+        )
         self.fields["vat_applicable"].help_text = (
             "VAT is not yet introduced. Leave this off."
         )
@@ -121,11 +125,19 @@ class DocumentForm(forms.ModelForm):
 
 
 class LeaseForm(forms.ModelForm):
+    agreement_type = forms.ChoiceField(
+        choices=Lease.AGREEMENT_CHOICES,
+        initial=Lease.AGREEMENT_LEASE,
+        required=False,
+        label="Agreement type",
+    )
+
     class Meta:
         model = Lease
         fields = [
             "tenant",
             "unit",
+            "agreement_type",
             "start_date",
             "end_date",
             "monthly_rent",
@@ -148,7 +160,8 @@ class LeaseForm(forms.ModelForm):
             "notes": forms.Textarea(attrs={"rows": 3}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, allow_reserved=False, **kwargs):
+        self.allow_reserved = allow_reserved
         super().__init__(*args, **kwargs)
         apply_widget_classes(self)
         self.fields["tenant"].queryset = Tenant.objects.order_by("business_name")
@@ -164,9 +177,22 @@ class LeaseForm(forms.ModelForm):
             "Invoices whose period starts on or after this date use the escalated rent."
         )
         self.fields["status"].help_text = "Only one active lease per unit may overlap in dates."
+        self.fields["agreement_type"].help_text = (
+            "Monthly rentals renew automatically until terminated and have no end date."
+        )
+        self.fields["end_date"].help_text = (
+            "Required for a fixed-term lease. Leave blank for a monthly rental."
+        )
 
     def clean(self):
+        self.instance._allow_reserved = self.allow_reserved
         cleaned = super().clean()
+        agreement = cleaned.get("agreement_type") or Lease.AGREEMENT_LEASE
+        cleaned["agreement_type"] = agreement
+        if agreement == Lease.AGREEMENT_MONTHLY:
+            cleaned["end_date"] = None
+        elif not cleaned.get("end_date"):
+            self.add_error("end_date", "Enter an end date for a fixed-term lease.")
         if cleaned.get("escalation_type") == Lease.ESCALATION_NONE:
             cleaned["escalation_value"] = Decimal("0.00")
             cleaned["escalation_interval_months"] = None

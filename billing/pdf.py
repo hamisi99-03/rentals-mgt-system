@@ -219,7 +219,12 @@ def _invoice_story(invoice, settings_obj, styles, accent):
             styles["small"],
         ),
         Paragraph(
-            f"Lease {invoice.lease.start_date:%d %b %Y} - {invoice.lease.end_date:%d %b %Y}",
+            (
+                f"Lease {invoice.lease.start_date:%d %b %Y} - "
+                f"{invoice.lease.end_date:%d %b %Y}"
+                if invoice.lease.end_date
+                else f"Monthly rental from {invoice.lease.start_date:%d %b %Y}"
+            ),
             styles["small"],
         ),
     ]

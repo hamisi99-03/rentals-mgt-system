@@ -103,7 +103,7 @@
           <dt>Invoice</dt><dd>{{ invoice.invoice_number }}</dd>
           <dt>Tenant</dt><dd><a href="{% url 'tenant_detail' invoice.tenant.pk %}">{{ invoice.tenant.business_name }}</a></dd>
           <dt>Unit</dt><dd>{{ invoice.unit.code }} &middot; {{ invoice.unit.building.name }}, {{ invoice.unit.floor.name }}</dd>
-          <dt>Lease</dt><dd><a href="{% url 'lease_detail' invoice.lease.pk %}">{{ invoice.lease.start_date|date:"d M Y" }} to {{ invoice.lease.end_date|date:"d M Y" }}</a></dd>
+          <dt>Agreement</dt><dd><a href="{% url 'lease_detail' invoice.lease.pk %}">{{ invoice.lease.get_agreement_type_display }} &middot; {{ invoice.lease.start_date|date:"d M Y" }}{% if invoice.lease.end_date %} to {{ invoice.lease.end_date|date:"d M Y" }}{% else %} (open-ended){% endif %}</a></dd>
           <dt>Period</dt><dd>{{ invoice.period_start|date:"d M Y" }} to {{ invoice.period_end|date:"d M Y" }}</dd>
           <dt>Issued</dt><dd>{{ invoice.issue_date|date:"d M Y" }}</dd>
           <dt>Due</dt><dd>{{ invoice.due_date|date:"d M Y" }}</dd>

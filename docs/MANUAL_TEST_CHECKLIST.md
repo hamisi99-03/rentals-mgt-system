@@ -1,4 +1,4 @@
-# Manual test checklist - Rentals Manager 1.1.0
+# Manual test checklist - Rentals Manager 1.2.0
 
 Use this list to confirm the app works on your PC. Tick each box after checking the expected result. Test in order; later sections use data created earlier.
 
@@ -33,12 +33,14 @@ Remove-Item Env:RENTALS_DATA_DIR
 - [ ] Save the recovery code somewhere.
 - [ ] Click Continue and sign in with the owner account.
 - [ ] Sign out and sign back in.
+- [ ] Click Forgot password?, use the recovery code to set a new password, and sign in.
+- [ ] Confirm a wrong recovery code is rejected.
 - [ ] Confirm opening `/setup/` again redirects to the login screen.
 
 ## 2. Shell, themes and appearance
 
 - [ ] Sidebar shows Dashboard, Units, Tenants, Billing, Payments, Maintenance, Expenses, Reports, Settings.
-- [ ] Top bar has search, Record payment, and the user menu.
+- [ ] Top bar has Back, search, Record payment, and the user menu; Back appears on every screen.
 - [ ] Open Appearance.
 - [ ] Switch Light, Dark, Match Windows.
 - [ ] Try all five palettes: Ocean, Forest, Sunset, Slate, Plum.
@@ -78,15 +80,17 @@ Remove-Item Env:RENTALS_DATA_DIR
 
 ## 5. Tenants, contacts, documents and leases
 
-- [ ] Create a tenant with business name, trade, KRA/ID, permit, VAT and withholding flags, primary unit and notes.
+- [ ] Create a tenant with business name, trade, KRA/ID, permit, VAT and withholding flags, primary unit and notes. Confirm saving opens the lease form with that tenant, ready to choose fixed-term lease or monthly rental.
 - [ ] Open the tenant profile; check every tab: Overview, Lease, Statement, Payments, Documents, Notes.
 - [ ] Add two contacts; mark one primary; confirm only one is primary.
 - [ ] Upload a permit/ID/lease document; open it; delete it.
 - [ ] Edit the tenant and archive/restore the tenant (blocked while an active lease exists).
-- [ ] Create a lease with dates, rent, deposit and no escalation.
+- [ ] Create a fixed-term lease with dates, rent, deposit and no escalation.
+- [ ] Create a monthly rental with no end date; confirm the unit becomes Occupied and billing includes it.
 - [ ] Confirm the lease automatically shows a flat monthly KES 500 service charge covering water, electricity, security and toilet.
 - [ ] Confirm the unit becomes Occupied and the tenant primary unit is set.
 - [ ] Create a second active lease on the same unit with overlapping dates; confirm it is rejected.
+- [ ] Add a tenant with an occupied or reserved unit as primary unit; confirm it is rejected with "is occupied" or "is reserved".
 - [ ] Edit the lease rent; confirm a manual rent-history entry is created.
 - [ ] Create a lease with percentage escalation but leave interval/date blank; confirm it defaults to 24 months and saves.
 - [ ] Terminate a lease; confirm the unit becomes Vacant, the lease shows Terminated and the reason is kept.
@@ -222,7 +226,7 @@ Remove-Item Env:RENTALS_DATA_DIR
 
 ## 14. Installer and window
 
-- [ ] Build/obtain `dist\RentalsManager-Setup-1.1.0.exe`.
+- [ ] Build/obtain `dist\RentalsManager-Setup-1.2.0.exe`.
 - [ ] Install on a clean Windows machine with no Python.
 - [ ] Confirm desktop and Start menu shortcuts exist.
 - [ ] Launch; complete first-run setup.

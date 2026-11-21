@@ -315,7 +315,11 @@ def prospect_convert(request, pk):
         initial["unit"] = prospect.interested_unit
         initial["monthly_rent"] = prospect.interested_unit.base_rent
 
-    form = LeaseForm(request.POST or None, initial=initial) if request.method == "POST" else LeaseForm(initial=initial)
+    form = (
+        LeaseForm(request.POST or None, initial=initial, allow_reserved=True)
+        if request.method == "POST"
+        else LeaseForm(initial=initial, allow_reserved=True)
+    )
     if request.method == "POST":
         try:
             with transaction.atomic():
@@ -338,7 +342,7 @@ def prospect_convert(request, pk):
                     tenant.save(update_fields=["status", "updated_at"])
                 post = request.POST.copy()
                 post["tenant"] = tenant.pk
-                form = LeaseForm(post)
+                form = LeaseForm(post, allow_reserved=True)
                 if not form.is_valid():
                     transaction.set_rollback(True)
                 else:

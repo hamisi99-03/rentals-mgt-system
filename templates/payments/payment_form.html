@@ -63,6 +63,25 @@
           </div>
         </div>
 
+        <div class="metric-strip mb-md" data-tenant-summary{% if not preview_summary %} style="display:none"{% endif %}>
+          <div>
+            <span class="metric-strip__label">Units taken</span>
+            <span class="metric-strip__value" data-summary-units>{{ preview_summary.units|default:"" }}</span>
+          </div>
+          <div>
+            <span class="metric-strip__label">Monthly rent</span>
+            <span class="metric-strip__value" data-summary-rent>{% if preview_summary %}{{ preview_summary.monthly_rent|money:app_settings.currency }}{% endif %}</span>
+          </div>
+          <div>
+            <span class="metric-strip__label">Amount required</span>
+            <span class="metric-strip__value" data-summary-outstanding>{% if preview_summary %}{{ preview_summary.outstanding|money:app_settings.currency }}{% endif %}</span>
+          </div>
+          <div>
+            <span class="metric-strip__label">Open invoices</span>
+            <span class="metric-strip__value" data-summary-invoices>{{ preview_summary.open_invoices|default:"" }}</span>
+          </div>
+        </div>
+
         <div class="table-wrap">
           <table class="data-table">
             <thead>

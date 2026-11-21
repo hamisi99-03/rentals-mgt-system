@@ -271,6 +271,39 @@ def test_expense_categories_and_receipt(logged_in, unit):
     assert category.is_active is False
 
 
+def test_prospect_convert_allows_reserved_unit(logged_in, building, floor):
+    unit = Unit.objects.create(
+        building=building,
+        floor=floor,
+        code="B02",
+        base_rent=Decimal("1500.00"),
+        status=Unit.STATUS_RESERVED,
+    )
+    prospect = Prospect.objects.create(
+        name="Bella", business="Salon Bella", interested_unit=unit
+    )
+    today = timezone.localdate()
+
+    response = logged_in.post(
+        reverse("prospect_convert", kwargs={"pk": prospect.pk}),
+        {
+            "unit": unit.pk,
+            "start_date": today.isoformat(),
+            "end_date": (today + timedelta(days=365)).isoformat(),
+            "monthly_rent": "1500.00",
+            "deposit_amount": "3000.00",
+            "escalation_type": "none",
+            "escalation_value": "0",
+            "status": "active",
+        },
+    )
+    assert response.status_code == 302
+    prospect.refresh_from_db()
+    assert prospect.status == Prospect.STATUS_CONVERTED
+    unit.refresh_from_db()
+    assert unit.status == Unit.STATUS_OCCUPIED
+
+
 def test_full_lifecycle_prospect_to_refund(logged_in, building, floor):
     unit = Unit.objects.create(
         building=building, floor=floor, code="C01", base_rent=Decimal("1200.00")

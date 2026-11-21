@@ -8,6 +8,7 @@ from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView, LogoutView
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
@@ -17,12 +18,18 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from core.backup import backup_status, default_backup_folder, perform_backup
-from core.forms import AppearanceForm, SettingsForm, StyledAuthenticationForm
+from core.forms import (
+    AppearanceForm,
+    PasswordRecoveryForm,
+    SettingsForm,
+    StyledAuthenticationForm,
+)
 from core.models import AuditLog, BackupLog, Settings, User
 from core.permissions import role_required
 from core.recovery import (
     generate_recovery_code,
     has_recovery_code,
+    reset_owner_password,
     store_recovery_code,
 )
 from core.setup_forms import SetupForm
@@ -43,6 +50,33 @@ class AppLoginView(LoginView):
 
 class AppLogoutView(LogoutView):
     next_page = "login"
+
+
+def password_recovery(request):
+    if not User.objects.exists():
+        return redirect("setup")
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
+    form = PasswordRecoveryForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            reset_owner_password(
+                form.cleaned_data["recovery_code"],
+                form.cleaned_data["new_password1"],
+            )
+        except ValidationError as exc:
+            form.add_error("new_password1", exc)
+        else:
+            messages.success(
+                request, "Password reset. Sign in with your new password."
+            )
+            return redirect("login")
+    return render(
+        request,
+        "registration/password_recovery.html",
+        {"form": form, "recovery_exists": has_recovery_code()},
+    )
 
 
 @role_required

@@ -7,6 +7,7 @@ datas = [
     ("templates", "templates"),
     ("static", "static"),
     ("docs", "docs"),
+    ("assets", "assets"),
 ]
 binaries = []
 hiddenimports = []
@@ -44,6 +45,7 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name="RentalsManager",
+    icon="assets/icon-building.ico",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

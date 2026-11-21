@@ -4,6 +4,7 @@ Field names, statuses and rules follow docs/SCHEMA.md. Unit status is kept in
 sync from active leases by the service layer and signals.
 """
 
+from datetime import date
 from decimal import Decimal
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -11,6 +12,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Q
 
 from core.models import TimeStampedModel, get_current_user
 
@@ -88,8 +90,8 @@ class Unit(TimeStampedModel):
             self.leases.filter(
                 status=Lease.STATUS_ACTIVE,
                 start_date__lte=today,
-                end_date__gte=today,
             )
+            .filter(Q(end_date__gte=today) | Q(end_date__isnull=True))
             .select_related("tenant")
             .first()
         )
@@ -122,6 +124,46 @@ class Tenant(TimeStampedModel):
     def __str__(self):
         return self.business_name
 
+    def clean(self):
+        if not self.primary_unit_id:
+            return
+        if self.pk and self.leases.filter(
+            unit_id=self.primary_unit_id, status=Lease.STATUS_ACTIVE
+        ).exists():
+            return
+
+        from property.services import current_lease
+
+        active_lease = current_lease(self.primary_unit)
+        if active_lease is not None:
+            raise ValidationError(
+                {
+                    "primary_unit": (
+                        f"Unit {self.primary_unit.code} is occupied by "
+                        f"{active_lease.tenant.business_name}. Choose a vacant unit "
+                        "or end the existing lease first."
+                    )
+                }
+            )
+        if self.primary_unit.status == Unit.STATUS_RESERVED:
+            raise ValidationError(
+                {
+                    "primary_unit": (
+                        f"Unit {self.primary_unit.code} is reserved. Clear the "
+                        "reservation before assigning a tenant."
+                    )
+                }
+            )
+        if self.primary_unit.status == Unit.STATUS_OCCUPIED:
+            raise ValidationError(
+                {
+                    "primary_unit": (
+                        f"Unit {self.primary_unit.code} is occupied. Choose a vacant "
+                        "unit or clear the unit status first."
+                    )
+                }
+            )
+
     @property
     def primary_contact(self):
         return self.contacts.filter(is_primary=True).first() or self.contacts.first()
@@ -135,8 +177,8 @@ class Tenant(TimeStampedModel):
             self.leases.filter(
                 status=Lease.STATUS_ACTIVE,
                 start_date__lte=today,
-                end_date__gte=today,
             )
+            .filter(Q(end_date__gte=today) | Q(end_date__isnull=True))
             .select_related("unit")
             .first()
         )
@@ -228,6 +270,13 @@ class Document(TimeStampedModel):
 
 
 class Lease(TimeStampedModel):
+    AGREEMENT_LEASE = "lease"
+    AGREEMENT_MONTHLY = "monthly"
+    AGREEMENT_CHOICES = [
+        (AGREEMENT_LEASE, "Fixed-term lease"),
+        (AGREEMENT_MONTHLY, "Monthly rental"),
+    ]
+
     ESCALATION_NONE = "none"
     ESCALATION_PERCENT = "percent"
     ESCALATION_FIXED = "fixed"
@@ -250,8 +299,11 @@ class Lease(TimeStampedModel):
 
     tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT, related_name="leases")
     unit = models.ForeignKey(Unit, on_delete=models.PROTECT, related_name="leases")
+    agreement_type = models.CharField(
+        max_length=20, choices=AGREEMENT_CHOICES, default=AGREEMENT_LEASE
+    )
     start_date = models.DateField()
-    end_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
     monthly_rent = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -289,8 +341,18 @@ class Lease(TimeStampedModel):
     def clean(self):
         from property.services import validate_lease_fields
 
-        if self.start_date and self.end_date and self.end_date < self.start_date:
+        is_monthly = self.agreement_type == self.AGREEMENT_MONTHLY
+        if (
+            not is_monthly
+            and self.start_date
+            and self.end_date
+            and self.end_date < self.start_date
+        ):
             raise ValidationError({"end_date": "End date cannot be before the start date."})
+        if not is_monthly and not self.end_date:
+            raise ValidationError(
+                {"end_date": "Fixed-term leases need an end date."}
+            )
 
         validate_lease_fields(
             escalation_type=self.escalation_type,
@@ -299,29 +361,63 @@ class Lease(TimeStampedModel):
             next_escalation_date=self.next_escalation_date,
         )
 
-        if self.status == self.STATUS_ACTIVE and self.unit_id and self.start_date and self.end_date:
+        if (
+            self.status == self.STATUS_ACTIVE
+            and self.unit_id
+            and not getattr(self, "_allow_reserved", False)
+            and self.unit.status == Unit.STATUS_RESERVED
+        ):
+            raise ValidationError(
+                {
+                    "unit": (
+                        f"Unit {self.unit.code} is reserved. Clear the reservation "
+                        "before creating an active lease."
+                    )
+                }
+            )
+
+        if self.status == self.STATUS_ACTIVE and self.unit_id and self.start_date:
+            lease_end = None if is_monthly else self.end_date
             overlapping = (
                 Lease.objects.filter(
                     unit_id=self.unit_id,
                     status=self.STATUS_ACTIVE,
-                    start_date__lte=self.end_date,
-                    end_date__gte=self.start_date,
+                    start_date__lte=lease_end or date.max,
                 )
+                .filter(Q(end_date__gte=self.start_date) | Q(end_date__isnull=True))
                 .exclude(pk=self.pk)
                 .select_related("tenant")
             )
             if overlapping.exists():
+                from django.utils import timezone
+
                 other = overlapping.first()
-                raise ValidationError(
-                    {
-                        "unit": (
-                            f"This unit already has an active lease with {other.tenant.business_name} "
-                            f"from {other.start_date:%d %b %Y} to {other.end_date:%d %b %Y}."
-                        )
-                    }
-                )
+                today = timezone.localdate()
+                if other.end_date is None:
+                    period = f"from {other.start_date:%d %b %Y}, open-ended"
+                    is_current = other.start_date <= today
+                else:
+                    period = (
+                        f"from {other.start_date:%d %b %Y} "
+                        f"to {other.end_date:%d %b %Y}"
+                    )
+                    is_current = other.start_date <= today <= other.end_date
+                if is_current:
+                    message = (
+                        f"Unit {self.unit.code} is occupied by "
+                        f"{other.tenant.business_name}. End or terminate the existing "
+                        "lease before assigning this unit."
+                    )
+                else:
+                    message = (
+                        f"Unit {self.unit.code} already has an active lease with "
+                        f"{other.tenant.business_name} {period}."
+                    )
+                raise ValidationError({"unit": message})
 
     def save(self, *args, **kwargs):
+        if self.agreement_type == self.AGREEMENT_MONTHLY:
+            self.end_date = None
         if self.escalation_type == self.ESCALATION_NONE:
             self.escalation_value = Decimal("0.00")
             self.escalation_interval_months = None

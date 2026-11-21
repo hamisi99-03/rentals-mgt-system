@@ -6,7 +6,7 @@ from pathlib import Path
 
 from django.core.management.utils import get_random_string
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 
 # Code and bundled assets. In a PyInstaller build this is the temporary _MEIPASS.
 CODE_DIR = Path(__file__).resolve().parent.parent
