@@ -140,6 +140,98 @@ def template_bytes() -> bytes:
     return stream.getvalue()
 
 
+def build_sample_workbook() -> Workbook:
+    """A ready-to-import 40-unit demo workbook matching the seed data names."""
+    from billing.services import add_months
+
+    workbook = build_template_workbook()
+    today = date.today()
+    month_start = today.replace(day=1)
+
+    buildings = [
+        ("Mwangaza Plaza", "Ngong Road"),
+        ("Riverside Court", "Riverside Drive"),
+    ]
+    floors = [
+        ("Mwangaza Plaza", "Ground floor", 0),
+        ("Mwangaza Plaza", "First floor", 1),
+        ("Riverside Court", "Ground floor", 0),
+        ("Riverside Court", "First floor", 1),
+    ]
+    units = []
+    tenants = []
+    leases = []
+    for index in range(1, 41):
+        building = buildings[0][0] if index <= 20 else buildings[1][0]
+        number = index if index <= 20 else index - 20
+        code = f"A{number:02d}" if index <= 20 else f"B{number:02d}"
+        rental = 15000 + (index % 6) * 2500
+        floor_name = "Ground floor" if ((number - 1) // 10) % 2 == 0 else "First floor"
+        units.append(
+            {
+                "building": building,
+                "floor": floor_name,
+                "code": code,
+                "size_sqm": 20 + index % 10,
+                "base_rent": rental,
+                "status": "vacant",
+                "notes": "Demo unit",
+            }
+        )
+        trade = ["Retail", "Salon", "Cafe", "Services"][index % 4]
+        tenants.append(
+            {
+                "business_name": f"Demo Tenant {index:02d}",
+                "trade": trade,
+                "vat_applicable": "no",
+                "withholding_applicable": "yes" if index % 7 == 0 else "no",
+                "primary_unit_code": code,
+                "status": "active",
+                "notes": "Demo tenant",
+                "contact_name": f"Contact {index:02d}",
+                "contact_role": "Owner",
+                "contact_phone": f"+2547000{index:05d}",
+                "contact_primary": "yes",
+            }
+        )
+        leases.append(
+            {
+                "unit_code": code,
+                "tenant_business_name": f"Demo Tenant {index:02d}",
+                "start_date": add_months(month_start, -13),
+                "end_date": add_months(month_start, 12),
+                "monthly_rent": rental,
+                "deposit_amount": rental * 2,
+                "escalation_type": "none",
+                "escalation_value": 0,
+                "status": "active",
+                "notes": "Demo lease",
+            }
+        )
+
+    for name, address in buildings:
+        workbook["Buildings"].append([name, address, "Demo building"])
+
+    for building, name, sort_order in floors:
+        workbook["Floors"].append([building, name, sort_order])
+
+    for sheet_name, rows in (
+        ("Units", units),
+        ("Tenants", tenants),
+        ("Leases", leases),
+    ):
+        sheet = workbook[sheet_name]
+        for row in rows:
+            sheet.append([row.get(column, "") for column in COLUMNS[sheet_name]])
+    return workbook
+
+
+def sample_workbook_bytes() -> bytes:
+    stream = BytesIO()
+    build_sample_workbook().save(stream)
+    return stream.getvalue()
+
+
 def _text(value) -> str:
     if value is None:
         return ""

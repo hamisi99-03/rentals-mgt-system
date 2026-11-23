@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.db.models.deletion import ProtectedError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -28,6 +29,7 @@ from property.import_export import (
     ImportFileError,
     commit_import,
     parse_workbook,
+    sample_workbook_bytes,
     template_bytes,
 )
 from property.models import (
@@ -216,6 +218,26 @@ def unit_toggle_active(request, pk):
         unit.save(update_fields=["is_active", "updated_at"])
         messages.success(request, f"Unit {unit.code} restored.")
     return redirect("unit_detail", pk=unit.pk)
+
+
+@require_POST
+@role_required
+def unit_delete(request, pk):
+    unit = get_object_or_404(Unit, pk=pk)
+    unit_pk = unit.pk
+    code = unit.code
+    try:
+        with transaction.atomic():
+            unit.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            f"Unit {code} has leases, invoices or other records. Remove those "
+            "first, or archive the unit instead.",
+        )
+        return redirect("unit_detail", pk=unit_pk)
+    messages.success(request, f"Unit {code} deleted.")
+    return redirect("units")
 
 
 @role_required
@@ -468,6 +490,32 @@ def tenant_toggle_status(request, pk):
         tenant.save(update_fields=["status", "updated_at"])
         messages.success(request, f"{tenant.business_name} restored to active.")
     return redirect("tenant_detail", pk=tenant.pk)
+
+
+@require_POST
+@role_required
+def tenant_delete(request, pk):
+    tenant = get_object_or_404(Tenant, pk=pk)
+    tenant_pk = tenant.pk
+    name = tenant.business_name
+    documents = list(_documents_for(tenant))
+    storage_files = [document.file for document in documents]
+    try:
+        with transaction.atomic():
+            tenant.delete()
+            for document in documents:
+                document.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            f"{name} has leases, invoices or payments. Terminate the lease and "
+            "keep the records, or archive the tenant instead.",
+        )
+        return redirect("tenant_detail", pk=tenant_pk)
+    for storage_file in storage_files:
+        storage_file.delete(save=False)
+    messages.success(request, f"Tenant {name} deleted.")
+    return redirect("tenants")
 
 
 @require_POST
@@ -744,4 +792,14 @@ def import_template(request):
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
     response["Content-Disposition"] = 'attachment; filename="rentals-import-template.xlsx"'
+    return response
+
+
+@role_required
+def import_sample(request):
+    response = HttpResponse(
+        sample_workbook_bytes(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="rentals-sample-40.xlsx"'
     return response

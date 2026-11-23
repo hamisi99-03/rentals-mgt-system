@@ -27,6 +27,10 @@
         {% csrf_token %}
         <button type="submit" class="btn">{% if tenant.status == 'active' %}Archive{% else %}Restore{% endif %}</button>
       </form>
+      <form method="post" action="{% url 'tenant_delete' tenant.pk %}" data-confirm="Permanently delete {{ tenant.business_name }}? This cannot be undone.">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--danger">Delete</button>
+      </form>
     </div>
   </div>
 

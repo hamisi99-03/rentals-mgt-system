@@ -11,6 +11,7 @@
     </div>
     <div class="page-actions">
       <a class="btn" href="{% url 'import_template' %}">{% include 'components/icon.html' with name='database' %} Download template</a>
+      <a class="btn btn--primary" href="{% url 'import_sample' %}">{% include 'components/icon.html' with name='database' %} Download sample 40 units</a>
     </div>
   </div>
 
@@ -27,6 +28,7 @@
         <li>Existing building, floor and tenant names are reused. Unit codes and tenant business names must not already exist.</li>
         <li>Only one active lease may overlap a unit. Occupied status is derived from leases, never imported directly.</li>
         <li>Opening balances are imported after the billing phase, when invoices and credit entries exist.</li>
+        <li>Want demo data after setup? Download the sample 40-unit workbook above, then upload it below. It creates 2 buildings, 4 floors, 40 units, 40 tenants and 40 active leases.</li>
       </ul>
     </section>
 

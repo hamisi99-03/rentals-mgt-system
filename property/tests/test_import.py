@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
-from property.import_export import COLUMNS
+from property.import_export import COLUMNS, parse_workbook
 from property.models import Building, Floor, Lease, Tenant, TenantContact, Unit
 
 pytestmark = pytest.mark.django_db
@@ -114,6 +114,23 @@ def test_template_download_has_expected_sheets(logged_in):
         assert sheet in workbook.sheetnames
         headers = [cell.value for cell in workbook[sheet][1]]
         assert headers == columns
+
+
+def test_sample_workbook_downloads_and_validates(logged_in):
+    response = logged_in.get(reverse("import_sample"))
+    assert response.status_code == 200
+    assert response["Content-Type"] == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    preview = parse_workbook(BytesIO(response.content))
+    assert preview.errors == []
+    assert preview.counts == {
+        "Buildings": 2,
+        "Floors": 4,
+        "Units": 40,
+        "Tenants": 40,
+        "Leases": 40,
+    }
 
 
 def test_import_forty_units_tenants_and_leases(logged_in):

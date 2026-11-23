@@ -88,7 +88,7 @@ python manage.py reset_password       # uses the recovery code shown at setup
 Outputs:
 
 - `dist\RentalsManager\RentalsManager.exe` (PyInstaller onedir)
-- `dist\RentalsManager-Setup-1.2.0.exe` (Inno Setup, per-user install)
+- `dist\RentalsManager-Setup-1.3.0.exe` (Inno Setup, per-user install)
 
 The installer creates a desktop and Start menu shortcut and an uninstaller. The exe, installer, shortcuts and pywebview window use `assets/icon-building.ico`; the browser build uses the generated favicon and 180 px PNG in `static/img/`. The owner-uploaded company logo is separate and is used only on invoices, receipts and statements. Business data is in `%LOCALAPPDATA%\RentalsManager`, outside the install folder, so updates/reinstalls leave it alone.
 

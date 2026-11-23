@@ -123,6 +123,18 @@ def test_unit_archive_and_restore(logged_in, unit):
     assert unit.is_active is True
 
 
+def test_unit_delete_removes_unit_without_lease(logged_in, unit):
+    response = logged_in.post(reverse("unit_delete", kwargs={"pk": unit.pk}))
+    assert response.status_code == 302
+    assert not Unit.objects.filter(pk=unit.pk).exists()
+
+
+def test_unit_delete_blocked_with_lease(logged_in, unit, lease):
+    response = logged_in.post(reverse("unit_delete", kwargs={"pk": unit.pk}))
+    assert response.status_code == 302
+    assert Unit.objects.filter(pk=unit.pk).exists()
+
+
 def test_building_delete_is_guarded(logged_in, building, floor, unit):
     response = logged_in.post(reverse("building_delete", kwargs={"pk": building.pk}))
     assert response.status_code == 302
@@ -329,6 +341,38 @@ def test_tenant_archive_without_lease(logged_in, tenant):
     logged_in.post(reverse("tenant_toggle_status", kwargs={"pk": tenant.pk}))
     tenant.refresh_from_db()
     assert tenant.status == Tenant.STATUS_ACTIVE
+
+
+def test_tenant_delete_removes_tenant_without_lease(logged_in, tenant):
+    response = logged_in.post(reverse("tenant_delete", kwargs={"pk": tenant.pk}))
+    assert response.status_code == 302
+    assert not Tenant.objects.filter(pk=tenant.pk).exists()
+
+
+def test_tenant_delete_removes_documents(logged_in, tenant):
+    upload = SimpleUploadedFile(
+        "permit.pdf", b"%PDF-1.4 test", content_type="application/pdf"
+    )
+    logged_in.post(
+        reverse("document_upload"),
+        {
+            "owner_type": "tenant",
+            "owner_id": tenant.pk,
+            "doc_type": "permit",
+            "file": upload,
+        },
+    )
+    document = Document.objects.get(owner_id=tenant.pk)
+
+    logged_in.post(reverse("tenant_delete", kwargs={"pk": tenant.pk}))
+    assert not Tenant.objects.filter(pk=tenant.pk).exists()
+    assert not Document.objects.filter(pk=document.pk).exists()
+
+
+def test_tenant_delete_blocked_with_lease(logged_in, tenant, lease):
+    response = logged_in.post(reverse("tenant_delete", kwargs={"pk": tenant.pk}))
+    assert response.status_code == 302
+    assert Tenant.objects.filter(pk=tenant.pk).exists()
 
 
 def test_create_lease_occupies_unit(logged_in, tenant, unit):
